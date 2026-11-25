@@ -7,7 +7,18 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.core.enums import ItemSource, TransactionStatus
 from app.schemas.common import ORMModel
-from app.schemas.types import _AS_NUMBER, Grams, LongText, Money, Percent, Ratio, SignedMoney, UnitCost, _quantizer
+from app.schemas.types import (
+    _AS_NUMBER,
+    Grams,
+    LongText,
+    Money,
+    Percent,
+    PositiveGrams,
+    Ratio,
+    SignedMoney,
+    UnitCost,
+    _quantizer,
+)
 
 PROPORTION_TOLERANCE = Decimal("0.01")
 
@@ -152,8 +163,68 @@ class TransactionRead(ORMModel):
     updated_at: datetime
     confirmed_at: datetime | None
     cancelled_at: datetime | None
+    reviewed_at: datetime | None
+    reviewed_by_id: uuid.UUID | None
     items: list[TransactionItemRead]
 
 
 class TransactionCancel(BaseModel):
     reason: Annotated[str, Field(min_length=3, max_length=500)]
+
+
+class ReviewItemIn(BaseModel):
+    """Item da transação após a correção do operador."""
+
+    item_id: uuid.UUID | None = Field(
+        default=None, description="Item existente a corrigir. Vazio = acrescentar um alimento que faltou."
+    )
+    food_id: uuid.UUID = Field(description="Alimento cadastrado correto.")
+    proportion: PositiveRatio | None = Field(default=None, description="Proporção do prato (0 a 1).")
+    weight_g: PositiveGrams | None = Field(default=None, description="Peso do alimento em gramas.")
+
+    @model_validator(mode="after")
+    def _exactly_one_measure(self) -> Self:
+        if (self.proportion is None) == (self.weight_g is None):
+            raise ValueError("Informe proportion OU weight_g em cada item.")
+        return self
+
+
+class TransactionReviewIn(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "reason": "Feijão estava identificado como farofa",
+                    "items": [{"item_id": "00000000-0000-0000-0000-000000000000", "food_id": "00000000-0000-0000-0000-000000000001", "weight_g": 300}],
+                    "confirm": True,
+                }
+            ]
+        }
+    )
+
+    reason: Annotated[str, Field(min_length=3, max_length=500, description="Motivo da revisão (fica na auditoria).")]
+    items: list[ReviewItemIn] | None = Field(
+        default=None,
+        min_length=1,
+        max_length=30,
+        description="Lista COMPLETA de itens após a correção; itens omitidos são removidos. "
+        "Vazio = não alterar os itens (apenas confirmar).",
+    )
+    confirm: bool = Field(default=False, description="Confirma a transação após aplicar as correções.")
+    notes: LongText | None = None
+
+    @model_validator(mode="after")
+    def _something_to_do(self) -> Self:
+        if self.items is None and not self.confirm and self.notes is None:
+            raise ValueError("Nada a fazer: envie items, notes ou confirm=true.")
+        if self.items is not None:
+            modes = {item.weight_g is not None for item in self.items}
+            if len(modes) > 1:
+                raise ValueError("Use o mesmo critério em todos os itens: só proportion ou só weight_g.")
+            ids = [item.item_id for item in self.items if item.item_id is not None]
+            if len(ids) != len(set(ids)):
+                raise ValueError("O mesmo item_id aparece mais de uma vez.")
+            foods = [item.food_id for item in self.items]
+            if len(foods) != len(set(foods)):
+                raise ValueError("O mesmo alimento não pode aparecer duas vezes; some as quantidades.")
+        return self

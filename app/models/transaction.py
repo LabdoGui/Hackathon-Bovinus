@@ -71,13 +71,17 @@ class Transaction(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     notes: Mapped[str | None] = mapped_column(Text)
     confirmed_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     cancelled_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    # Preenchidos quando um operador revisa (corrige e/ou confirma) a transação.
+    reviewed_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    reviewed_by_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("operators.id", ondelete="SET NULL"), index=True)
 
     items: Mapped[list["TransactionItem"]] = relationship(
         back_populates="transaction",
         cascade="all, delete-orphan",
         order_by="TransactionItem.position",
     )
-    operator: Mapped["Operator | None"] = relationship()
+    operator: Mapped["Operator | None"] = relationship(foreign_keys=[operator_id])
+    reviewed_by: Mapped["Operator | None"] = relationship(foreign_keys=[reviewed_by_id])
     scale_reading: Mapped["ScaleReading | None"] = relationship()
     image_capture: Mapped["ImageCapture | None"] = relationship()
     recognition_result: Mapped["RecognitionResult | None"] = relationship()

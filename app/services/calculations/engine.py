@@ -190,21 +190,20 @@ class PlateCalculation:
     gross_margin_pct: Decimal | None
 
 
-def calculate_plate(
+def _assemble(
     *,
-    gross_weight_g: Decimal,
-    tare_g: Decimal,
+    gross: Decimal,
+    tare: Decimal,
+    net: Decimal,
     price_per_kg: Decimal,
-    items: Sequence[PlateItemInput],
+    proportions: Sequence[Decimal],
+    weights: Sequence[Decimal],
+    costs: Sequence[Decimal | None],
 ) -> PlateCalculation:
-    net = net_weight(gross_weight_g, tare_g)
-    proportions = normalize_proportions([item.proportion for item in items])
-    weights = distribute_weight(net, proportions)
-
     results = []
-    for item, proportion, weight in zip(items, proportions, weights, strict=True):
-        cost = item_cost(weight, item.cost_per_kg) if item.cost_per_kg is not None else None
-        results.append(PlateItemResult(proportion, weight, item.cost_per_kg, cost))
+    for proportion, weight, cost_per_kg in zip(proportions, weights, costs, strict=True):
+        cost = item_cost(weight, cost_per_kg) if cost_per_kg is not None else None
+        results.append(PlateItemResult(proportion, weight, cost_per_kg, cost))
 
     known = sum((r.cost for r in results if r.cost is not None), ZERO)
     complete = all(r.cost is not None for r in results)
@@ -213,8 +212,8 @@ def calculate_plate(
     margin, margin_pct = gross_food_margin(charged, food_cost) if food_cost is not None else (None, None)
 
     return PlateCalculation(
-        gross_weight_g=_round(gross_weight_g, WEIGHT_QUANTUM),
-        tare_g=_round(tare_g, WEIGHT_QUANTUM),
+        gross_weight_g=_round(gross, WEIGHT_QUANTUM),
+        tare_g=_round(tare, WEIGHT_QUANTUM),
         net_weight_g=net,
         price_per_kg=price_per_kg,
         charged_amount=charged,
@@ -224,4 +223,53 @@ def calculate_plate(
         food_cost=food_cost,
         gross_margin=margin,
         gross_margin_pct=margin_pct,
+    )
+
+
+def calculate_plate(
+    *,
+    gross_weight_g: Decimal,
+    tare_g: Decimal,
+    price_per_kg: Decimal,
+    items: Sequence[PlateItemInput],
+) -> PlateCalculation:
+    """Calcula o prato a partir das proporções dos alimentos."""
+    net = net_weight(gross_weight_g, tare_g)
+    proportions = normalize_proportions([item.proportion for item in items])
+    weights = distribute_weight(net, proportions)
+    return _assemble(
+        gross=gross_weight_g,
+        tare=tare_g,
+        net=net,
+        price_per_kg=price_per_kg,
+        proportions=proportions,
+        weights=weights,
+        costs=[item.cost_per_kg for item in items],
+    )
+
+
+def calculate_plate_from_weights(
+    *,
+    gross_weight_g: Decimal,
+    tare_g: Decimal,
+    price_per_kg: Decimal,
+    weights_g: Sequence[Decimal],
+    costs_per_kg: Sequence[Decimal | None],
+) -> PlateCalculation:
+    """Calcula o prato a partir do peso de cada alimento (correção do operador).
+
+    Se a soma dos pesos informados for igual ao peso líquido, eles são mantidos
+    exatamente. Se diferir um pouco (o chamador valida a tolerância), os pesos são
+    escalados para somarem o peso líquido, mantendo as proporções entre eles.
+    """
+    net = net_weight(gross_weight_g, tare_g)
+    weights = distribute_weight(net, [_round(w, WEIGHT_QUANTUM) for w in weights_g])
+    return _assemble(
+        gross=gross_weight_g,
+        tare=tare_g,
+        net=net,
+        price_per_kg=price_per_kg,
+        proportions=normalize_proportions(weights_g),
+        weights=weights,
+        costs=costs_per_kg,
     )

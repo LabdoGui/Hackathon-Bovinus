@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Painel gerencial · {{ app_name }}{% endblock %}
+{% block content %}
+<h1>Painel gerencial</h1>
+<div id="auth" class="card" hidden></div>
+
+<div id="content" hidden>
+  <form id="filters" class="card filters">
+    <label>De <input type="date" id="date-from"></label>
+    <label>Até <input type="date" id="date-to"></label>
+    <button type="submit">Atualizar</button>
+    <button type="button" id="export-csv" class="secondary">Exportar CSV</button>
+    <span id="period-label" class="muted"></span>
+  </form>
+  <p id="page-msg" class="msg info" hidden></p>
+
+  <section class="card">
+    <h2>Resumo</h2>
+    <div id="summary" class="metrics"></div>
+    <ul id="summary-notes" class="notes"></ul>
+  </section>
+
+  <section class="card">
+    <h2>Fila de revisão</h2>
+    <div id="queue"></div>
+  </section>
+
+  <section class="card">
+    <h2>Valor cobrado por dia</h2>
+    <div id="by-day"></div>
+  </section>
+
+  <section class="card">
+    <h2>Por alimento</h2>
+    <div id="by-food"></div>
+  </section>
+
+  <section class="card">
+    <h2>Revisões e correções</h2>
+    <div id="review-stats" class="metrics"></div>
+    <ul id="review-reasons" class="notes"></ul>
+    <div id="review-notes"></div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', path='js/dashboard.js') }}"></script>{% endblock %}

@@ -9,6 +9,7 @@ from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
@@ -149,6 +150,13 @@ class Settings(BaseSettings):
     )
     max_upload_mb: int = Field(default=5, ge=1, le=50)
 
+    # Relatórios e revisão
+    app_timezone: str = "America/Sao_Paulo"
+    report_default_days: int = Field(default=30, ge=1, le=366)
+    report_max_days: int = Field(default=366, ge=1, le=3660)
+    review_weight_tolerance_g: Decimal = Field(default=Decimal("5"), ge=0, le=Decimal("1000"))
+    review_weight_tolerance_pct: Decimal = Field(default=Decimal("2"), ge=0, le=Decimal("100"))
+
     # Negócio
     currency: str = Field(default="BRL", min_length=3, max_length=3)
     default_price_per_kg: Decimal | None = Field(default=None, gt=0, le=Decimal("100000"))
@@ -179,6 +187,17 @@ class Settings(BaseSettings):
     @classmethod
     def _upper_parity(cls, value: object) -> object:
         return value.upper() if isinstance(value, str) else value
+
+    @field_validator("app_timezone")
+    @classmethod
+    def _timezone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise ValueError(
+                f"APP_TIMEZONE '{value}' desconhecido. No Windows instale o pacote 'tzdata' (pip install tzdata)."
+            ) from exc
+        return value
 
     @field_validator("scale_serial_bytesize")
     @classmethod
@@ -256,6 +275,10 @@ class Settings(BaseSettings):
             port=self.postgres_port,
             database=self.postgres_db,
         )
+
+    @property
+    def tzinfo(self) -> ZoneInfo:
+        return ZoneInfo(self.app_timezone)
 
     @property
     def max_upload_bytes(self) -> int:

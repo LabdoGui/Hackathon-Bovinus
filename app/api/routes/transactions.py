@@ -4,7 +4,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Header, Query, Request, Response, status
 
-from app.api.deps import Limit, ManagerOperator, Offset, OptionalOperator, SessionDep, SettingsDep
+from app.api.deps import CurrentOperator, Limit, ManagerOperator, Offset, OptionalOperator, SessionDep, SettingsDep
 from app.core.enums import TransactionStatus
 from app.schemas.common import ERROR_RESPONSES, Page
 from app.schemas.transaction import (
@@ -14,7 +14,11 @@ from app.schemas.transaction import (
     TransactionCreate,
     TransactionFromRecognition,
     TransactionRead,
+    TransactionReviewIn,
 )
+from app.schemas.audit import AuditLogRead
+from app.services.audit_history import AuditHistoryService
+from app.services.reviews import TransactionReviewService
 from app.services.scale_readings import ScaleReadingService
 from app.services.transactions import TransactionService
 
@@ -133,3 +137,30 @@ def cancel_transaction(
     operator: ManagerOperator,
 ):
     return _service(request, session, settings).cancel(transaction_id, data.reason, operator)
+
+
+@router.post(
+    "/{transaction_id}/review",
+    response_model=TransactionRead,
+    summary="Revisar transação: corrigir alimentos, proporções e pesos e/ou confirmar",
+    description="Exige chave de API de qualquer operador. Só transações `pending_review`. "
+    "Os valores originais ficam em `original_*` nos itens e o antes/depois na auditoria.",
+)
+def review_transaction(
+    transaction_id: uuid.UUID,
+    data: TransactionReviewIn,
+    session: SessionDep,
+    settings: SettingsDep,
+    operator: CurrentOperator,
+):
+    return TransactionReviewService(session, settings).review(transaction_id, data, operator)
+
+
+@router.get(
+    "/{transaction_id}/history",
+    response_model=list[AuditLogRead],
+    summary="Histórico de auditoria da transação (gerente/admin)",
+)
+def transaction_history(transaction_id: uuid.UUID, request: Request, session: SessionDep, settings: SettingsDep, _: ManagerOperator):
+    _service(request, session, settings).get(transaction_id)  # 404 se não existir
+    return AuditHistoryService(session).for_entity("transaction", transaction_id)

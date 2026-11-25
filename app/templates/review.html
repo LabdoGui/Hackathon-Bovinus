@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Revisão · {{ app_name }}{% endblock %}
+{% block content %}
+<p><a href="/dashboard">&larr; Painel gerencial</a></p>
+<h1>Revisão de transação</h1>
+<div id="auth" class="card" hidden></div>
+<p id="page-msg" class="msg info" hidden></p>
+
+<div id="content" hidden>
+  <section id="tx-section" hidden>
+    <div class="card">
+      <h2><span id="tx-title"></span> <span id="tx-status"></span></h2>
+      <div id="tx-meta" class="metrics"></div>
+      <h3 id="tx-reasons-title">Por que está em revisão</h3>
+      <ul id="tx-reasons" class="notes"></ul>
+      <div id="tx-photo"></div>
+    </div>
+
+    <div class="card">
+      <h2>Alimentos</h2>
+      <fieldset class="modes">
+        <legend>Editar por</legend>
+        <label><input type="radio" name="mode" id="mode-weight" checked> peso (g)</label>
+        <label><input type="radio" name="mode" id="mode-proportion"> proporção (%)</label>
+      </fieldset>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Alimento</th><th>Quantidade</th><th>Custo</th><th>Reconhecido / original</th><th></th></tr></thead>
+          <tbody id="items-body"></tbody>
+        </table>
+      </div>
+      <p id="totals" class="msg info"></p>
+      <button type="button" id="add-item" class="secondary">Acrescentar alimento</button>
+    </div>
+
+    <div class="card">
+      <h2>Concluir</h2>
+      <p id="readonly-note" class="msg info" hidden></p>
+      <div id="reason-box">
+        <label for="reason">Motivo da revisão (obrigatório, fica no histórico)</label>
+        <textarea id="reason" rows="2" maxlength="500"></textarea>
+        <label for="notes">Observações da transação</label>
+        <textarea id="notes" rows="2" maxlength="2000"></textarea>
+      </div>
+      <div id="actions" class="actions">
+        <button type="button" id="btn-save" class="secondary">Salvar correções</button>
+        <button type="button" id="btn-save-confirm">Salvar e confirmar</button>
+        <button type="button" id="btn-confirm" class="secondary">Confirmar sem alterar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Histórico</h2>
+      <ul id="history" class="history"></ul>
+    </div>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', path='js/review.js') }}"></script>{% endblock %}

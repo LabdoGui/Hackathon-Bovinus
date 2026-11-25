@@ -16,8 +16,8 @@ self-service. Projetada para rodar em um notebook ou mini-PC **Windows** (sem Ra
 | 2 | Simulador de balança e motor de cálculo | ✅ Concluída |
 | 3 | Webcam e captura | ✅ Concluída |
 | 4 | Reconhecimento mock e interface abstrata de IA | ✅ Concluída |
-| 5 | Revisão humana, histórico e relatórios | ⏳ Aguardando autorização |
-| 6 | Testes, segurança, documentação e empacotamento | — |
+| 5 | Revisão humana, histórico e relatórios | ✅ Concluída |
+| 6 | Testes, segurança, documentação e empacotamento | ⏳ Aguardando autorização |
 
 Detalhes de cada fase em [`docs/fases/`](docs/fases/).
 
@@ -72,6 +72,8 @@ python -m app
 | http://127.0.0.1:8000/docs | Documentação interativa (Swagger/OpenAPI) |
 | http://127.0.0.1:8000/redoc | Documentação ReDoc |
 | http://127.0.0.1:8000/api/v1/health | Saúde da API |
+| http://127.0.0.1:8000/dashboard | Painel gerencial (chave de gerente/admin) |
+| http://127.0.0.1:8000/review?id=… | Revisão de uma transação (chave de operador) |
 | http://127.0.0.1:8000/camera | Teste da webcam (pré-visualização, captura, upload) |
 
 ## Configuração
@@ -99,6 +101,8 @@ Todas as configurações vêm de variáveis de ambiente (ou do arquivo `.env`). 
 | `RECOGNITION_MIN_CONFIDENCE` | confiança mínima antes de ir para revisão | `0.70` |
 | `RECOGNITION_MOCK_SCENARIO` | cenário do mock **simulado** | `random` |
 | `RECOGNITION_API_*` | URL, chave e cabeçalho da API externa | ver [docs/reconhecimento.md](docs/reconhecimento.md) |
+| `APP_TIMEZONE` | fuso dos relatórios | `America/Sao_Paulo` |
+| `REVIEW_WEIGHT_TOLERANCE_G` / `_PCT` | tolerância ao corrigir pesos | `5` / `2` |
 
 ### PostgreSQL (opção futura)
 
@@ -126,6 +130,14 @@ Com captura e reconhecimento (**simulado** no modo `mock`; não há modelo trein
 
 Detalhes em [docs/reconhecimento.md](docs/reconhecimento.md).
 
+Revisão humana e relatórios:
+
+4. Abra o painel em `/dashboard` (chave de gerente), clique em **Revisar** na fila, corrija
+   alimentos/pesos e confirme; ou use `POST /api/v1/transactions/{id}/review`.
+5. `GET /api/v1/reports/summary` (e `by-day`, `by-food`, `review`, `transactions.csv`).
+
+Detalhes em [docs/revisao-e-relatorios.md](docs/revisao-e-relatorios.md).
+
 Para conectar uma balança real, veja [docs/balanca-serial.md](docs/balanca-serial.md); para a webcam, [docs/webcam.md](docs/webcam.md).
 
 ## Arquitetura
@@ -136,7 +148,7 @@ app/
   cli.py               # comandos: migrate, seed, create-operator
   core/                # config, logging (com mascaramento), security, exceções, middleware
   api/                 # deps, tratamento de erros, router /api/v1
-    routes/            # health, operators, ingredients, recipes, foods, scale, transactions, camera, recognition, (reports)
+    routes/            # health, operators, ingredients, recipes, foods, scale, transactions, camera, recognition, reports, audit
   models/              # entidades SQLAlchemy
   schemas/             # modelos Pydantic de entrada/saída
   repositories/        # consultas ao banco (persistência)
@@ -145,7 +157,8 @@ app/
     calculations/      # motor de cálculo (funções puras)
     camera/            # CameraService (OpenCV), qualidade e armazenamento de imagens
     recognition/       # FoodRecognitionService: mock (simulado), API, local + interpretação
-    reports/           # fase 5
+    reports/           # relatórios gerenciais (Decimal, fuso local, CSV)
+    reviews.py         # revisão humana de transações
   database/            # conexão, migrações Alembic, seed
   templates/ static/   # páginas Jinja2
   utils/

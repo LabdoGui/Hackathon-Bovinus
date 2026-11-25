@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Backend em execução</h1>
-<p>API local do PratoCusto AI. O painel gerencial será adicionado na Fase 5.</p>
+<p>API local do PratoCusto AI.</p>
 
 <section class="card">
   <h2>Configuração atual</h2>
@@ -20,6 +20,7 @@
     <li><a href="/docs">Documentação interativa (Swagger)</a></li>
     <li><a href="/redoc">Documentação (ReDoc)</a></li>
     <li><a href="{{ api_prefix }}/health">Saúde da API</a></li>
+    <li><a href="/dashboard">Painel gerencial</a> (exige chave de gerente/admin)</li>
     <li><a href="/camera">Teste da câmera</a></li>
   </ul>
 </section>

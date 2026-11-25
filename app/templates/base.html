@@ -6,13 +6,20 @@
   <title>{% block title %}{{ app_name }}{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
-<body>
+<body data-api="{{ api_prefix }}">
   <header class="topbar">
     <strong>{{ app_name }}</strong>
     <span class="muted">v{{ version }}</span>
+    <nav>
+      <a href="/dashboard">Painel</a>
+      <a href="/camera">Câmera</a>
+      <a href="/docs">API</a>
+    </nav>
   </header>
   <main class="container">
     {% block content %}{% endblock %}
   </main>
+  <script src="{{ url_for('static', path='js/common.js') }}"></script>
+  {% block scripts %}{% endblock %}
 </body>
 </html>
