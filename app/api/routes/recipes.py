@@ -4,8 +4,9 @@ from fastapi import APIRouter, Response, status
 
 from app.api.deps import Limit, ManagerOperator, Offset, SearchQuery, SessionDep
 from app.schemas.common import ERROR_RESPONSES, Page
-from app.schemas.recipe import RecipeCreate, RecipeRead, RecipeUpdate
+from app.schemas.recipe import RecipeCostRead, RecipeCreate, RecipeRead, RecipeUpdate
 from app.services.catalog import RecipeService
+from app.services.costing import recipe_cost_breakdown
 
 router = APIRouter(prefix="/recipes", tags=["Fichas técnicas"], responses=ERROR_RESPONSES)
 
@@ -21,6 +22,11 @@ def list_recipes(
 @router.get("/{recipe_id}", response_model=RecipeRead, summary="Consultar ficha técnica")
 def get_recipe(recipe_id: uuid.UUID, session: SessionDep):
     return RecipeService(session).get(recipe_id)
+
+
+@router.get("/{recipe_id}/cost", response_model=RecipeCostRead, summary="Custo estimado da ficha técnica")
+def get_recipe_cost(recipe_id: uuid.UUID, session: SessionDep):
+    return recipe_cost_breakdown(RecipeService(session).get(recipe_id))
 
 
 @router.post(

@@ -23,6 +23,7 @@ from app.core.middleware import RequestContextMiddleware
 from app.core.security import API_KEY_HEADER_NAME
 from app.database.connection import Database
 from app.database.migrate import upgrade_to_head
+from app.services.scale import ScaleManager
 
 APP_DIR = Path(__file__).resolve().parent
 logger = logging.getLogger("app")
@@ -44,6 +45,12 @@ OPENAPI_TAGS = [
     {"name": "Ingredientes", "description": "Insumos e custos de compra."},
     {"name": "Fichas técnicas", "description": "Receitas com ingredientes e rendimento."},
     {"name": "Alimentos", "description": "Alimentos do bufê e classes de reconhecimento."},
+    {"name": "Balança", "description": "Leituras (mock, serial ou manual), estabilização, peso mínimo e tara."},
+    {
+        "name": "Transações",
+        "description": "Pesagens com distribuição de peso, custo alimentar estimado, valor cobrado e "
+        "margem bruta alimentar estimada.",
+    },
 ]
 
 
@@ -71,6 +78,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         try:
             yield
         finally:
+            app.state.scale.close()
             database.dispose()
             logger.info("%s finalizado", settings.app_name)
 
@@ -86,6 +94,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = settings
     app.state.db = Database(settings.sqlalchemy_url, echo=settings.db_echo)
+    # Nenhum hardware é aberto aqui: a porta serial só é aberta na primeira leitura.
+    app.state.scale = ScaleManager(settings)
 
     app.add_middleware(
         CORSMiddleware,

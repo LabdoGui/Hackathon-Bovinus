@@ -13,8 +13,8 @@ self-service. Projetada para rodar em um notebook ou mini-PC **Windows** (sem Ra
 | Fase | Escopo | Status |
 |------|--------|--------|
 | 1 | Estrutura, configurações, banco de dados e API básica | ✅ Concluída |
-| 2 | Simulador de balança e motor de cálculo | ⏳ Aguardando autorização |
-| 3 | Webcam e captura | — |
+| 2 | Simulador de balança e motor de cálculo | ✅ Concluída |
+| 3 | Webcam e captura | ⏳ Aguardando autorização |
 | 4 | Reconhecimento mock e interface abstrata de IA | — |
 | 5 | Revisão humana, histórico e relatórios | — |
 | 6 | Testes, segurança, documentação e empacotamento | — |
@@ -88,6 +88,11 @@ Todas as configurações vêm de variáveis de ambiente (ou do arquivo `.env`). 
 | `DB_AUTO_MIGRATE` | aplica migrações ao iniciar | `true` |
 | `CORS_ORIGINS` | origens separadas por vírgula (sem `*`) | `http://localhost:8000,http://127.0.0.1:8000` |
 | `MAX_UPLOAD_MB` | limite de imagens | `5` |
+| `DEFAULT_PRICE_PER_KG` | preço cobrado por kg (R$) | — (exemplo no `.env.example`) |
+| `SCALE_DEFAULT_TARE_G` | tara padrão (g) | `0` |
+| `SCALE_MIN_WEIGHT_G` | peso líquido mínimo (g) | `10` |
+| `SCALE_STABLE_SAMPLES` / `SCALE_STABLE_TOLERANCE_G` | critério de estabilidade | `3` / `2` |
+| `SCALE_SERIAL_*` | porta, baud, paridade, protocolo etc. | ver [docs/balanca-serial.md](docs/balanca-serial.md) |
 
 ### PostgreSQL (opção futura)
 
@@ -98,6 +103,16 @@ pip install -r requirements-postgres.txt
 Depois defina `DATABASE_MODE=postgresql` e `DATABASE_URL=postgresql+psycopg://usuario:senha@host:5432/pratocusto`
 (ou os campos `POSTGRES_*`). As regras de negócio não mudam: só a conexão.
 
+## Fluxo básico (balança simulada)
+
+1. `POST /api/v1/scale/readings` com `{"simulated_weight_g": 650, "tare_g": 150}` → leitura estável.
+2. `POST /api/v1/transactions` com o `id` da leitura e os alimentos com suas proporções
+   (cabeçalho opcional `Idempotency-Key`).
+3. A resposta traz peso líquido, peso de cada alimento, custo alimentar estimado, valor cobrado e
+   margem bruta alimentar estimada.
+
+Para conectar uma balança real, veja [docs/balanca-serial.md](docs/balanca-serial.md).
+
 ## Arquitetura
 
 ```
@@ -106,12 +121,14 @@ app/
   cli.py               # comandos: migrate, seed, create-operator
   core/                # config, logging (com mascaramento), security, exceções, middleware
   api/                 # deps, tratamento de erros, router /api/v1
-    routes/            # health, operators, ingredients, recipes, foods, (transactions, scale, camera, recognition, reports)
+    routes/            # health, operators, ingredients, recipes, foods, scale, transactions, (camera, recognition, reports)
   models/              # entidades SQLAlchemy
   schemas/             # modelos Pydantic de entrada/saída
   repositories/        # consultas ao banco (persistência)
   services/            # regras de negócio
-    scale/ camera/ recognition/ calculations/ reports/   # integrações (fases 2–5)
+    scale/             # ScaleService: mock, serial, manual + estabilização
+    calculations/      # motor de cálculo (funções puras)
+    camera/ recognition/ reports/   # fases 3–5
   database/            # conexão, migrações Alembic, seed
   templates/ static/   # páginas Jinja2
   utils/

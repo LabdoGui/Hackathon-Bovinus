@@ -21,6 +21,9 @@ MAX_WEIGHT_G = Decimal("100000")  # 100 kg
 MAX_MONEY = Decimal("100000000")
 
 Grams = Annotated[Decimal, Field(ge=0, le=MAX_WEIGHT_G, allow_inf_nan=False), _quantizer(1), _AS_NUMBER]
+SignedGrams = Annotated[
+    Decimal, Field(ge=-MAX_WEIGHT_G, le=MAX_WEIGHT_G, allow_inf_nan=False), _quantizer(1), _AS_NUMBER
+]
 PositiveGrams = Annotated[Decimal, Field(gt=0, le=MAX_WEIGHT_G, allow_inf_nan=False), _quantizer(1), _AS_NUMBER]
 Money = Annotated[Decimal, Field(ge=0, le=MAX_MONEY, allow_inf_nan=False), _quantizer(2), _AS_NUMBER]
 SignedMoney = Annotated[Decimal, Field(ge=-MAX_MONEY, le=MAX_MONEY, allow_inf_nan=False), _quantizer(2), _AS_NUMBER]

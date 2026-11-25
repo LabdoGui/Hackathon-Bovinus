@@ -102,3 +102,24 @@ class RecipeRead(RecipeSummary):
     ingredients: list[RecipeIngredientRead]
     created_at: datetime
     updated_at: datetime
+
+
+class IngredientCostRead(BaseModel):
+    ingredient_id: uuid.UUID
+    ingredient_name: str
+    unit: IngredientUnit
+    gross_quantity: Quantity
+    net_quantity: Quantity | None
+    correction_factor: UnitCost | None = Field(description="Fator de correção = quantidade bruta / líquida.")
+    unit_cost: UnitCost
+    cost: UnitCost
+
+
+class RecipeCostRead(BaseModel):
+    recipe_id: uuid.UUID
+    recipe_name: str
+    is_demo: bool
+    yield_weight_g: PositiveGrams
+    total_cost: UnitCost = Field(description="Custo total dos ingredientes (quantidades brutas).")
+    cost_per_kg: UnitCost = Field(description="Custo estimado por kg da preparação pronta.")
+    ingredients: list[IngredientCostRead]

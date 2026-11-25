@@ -39,12 +39,15 @@ class Transaction(UUIDPrimaryKeyMixin, TimestampMixin, Base):
 
     code: Mapped[str] = mapped_column(String(32), nullable=False, unique=True)
     idempotency_key: Mapped[str | None] = mapped_column(String(64), unique=True)
+    # Hash do conteúdo da requisição original, para detectar reuso da chave com outro conteúdo.
+    idempotency_fingerprint: Mapped[str | None] = mapped_column(String(64))
     status: Mapped[TransactionStatus] = mapped_column(
         str_enum(TransactionStatus, 20), nullable=False, default=TransactionStatus.DRAFT
     )
     operator_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("operators.id", ondelete="SET NULL"), index=True)
+    # Única: uma leitura da balança só pode originar uma transação.
     scale_reading_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("scale_readings.id", ondelete="SET NULL"), index=True
+        ForeignKey("scale_readings.id", ondelete="SET NULL"), index=True, unique=True
     )
     image_capture_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("image_captures.id", ondelete="SET NULL"), index=True

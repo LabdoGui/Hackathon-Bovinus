@@ -1,1 +1,39 @@
-"""Motor de cálculo de peso, custo e margem. Implementado na Fase 2."""
+"""Motor de cálculo de peso, custo e margem (independente de hardware e de IA)."""
+
+from app.services.calculations.engine import (
+    CalculationError,
+    PlateCalculation,
+    PlateItemInput,
+    PlateItemResult,
+    RecipeCost,
+    RecipeCostLine,
+    calculate_plate,
+    charged_amount,
+    correction_factor,
+    distribute_weight,
+    gross_food_margin,
+    ingredient_line_cost,
+    item_cost,
+    net_weight,
+    normalize_proportions,
+    recipe_cost,
+)
+
+__all__ = [
+    "CalculationError",
+    "PlateCalculation",
+    "PlateItemInput",
+    "PlateItemResult",
+    "RecipeCost",
+    "RecipeCostLine",
+    "calculate_plate",
+    "charged_amount",
+    "correction_factor",
+    "distribute_weight",
+    "gross_food_margin",
+    "ingredient_line_cost",
+    "item_cost",
+    "net_weight",
+    "normalize_proportions",
+    "recipe_cost",
+]

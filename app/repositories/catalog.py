@@ -71,6 +71,17 @@ class FoodRepository(Repository[Food]):
     def get_by_name(self, name: str) -> Food | None:
         return self.session.scalar(select(Food).where(Food.name == name))
 
+    def get_many(self, ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, Food]:
+        ids = list(ids)
+        if not ids:
+            return {}
+        statement = (
+            select(Food)
+            .where(Food.id.in_(ids))
+            .options(selectinload(Food.recipe).selectinload(Recipe.ingredients).joinedload(RecipeIngredient.ingredient))
+        )
+        return {food.id: food for food in self.session.scalars(statement).unique()}
+
     def get_by_recognition_class(self, recognition_class: str) -> Food | None:
         return self.session.scalar(select(Food).where(Food.recognition_class == recognition_class))
 

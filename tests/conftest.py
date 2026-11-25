@@ -2,6 +2,7 @@
 
 import uuid
 from collections.abc import Callable, Iterator
+from decimal import Decimal
 
 import pytest
 from fastapi import FastAPI
@@ -28,6 +29,9 @@ def settings(tmp_path) -> Settings:
         camera_mode=CameraMode.MOCK,
         recognition_mode=RecognitionMode.MOCK,
         max_upload_mb=1,
+        scale_sample_interval_ms=0,
+        scale_stabilization_timeout_s=2,
+        default_price_per_kg=Decimal("59.90"),
     )
 
 

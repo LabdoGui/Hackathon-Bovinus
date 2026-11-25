@@ -67,3 +67,28 @@ def test_env_example_documents_initial_modes():
     content = (BASE_DIR / ".env.example").read_text(encoding="utf-8")
     for line in ("SCALE_MODE=mock", "CAMERA_MODE=webcam", "RECOGNITION_MODE=mock", "DATABASE_MODE=sqlite"):
         assert line in content.splitlines()
+
+
+def test_env_example_loads_completely(monkeypatch):
+    """O .env.example precisa ser válido do jeito que está (valores lidos como texto)."""
+    import os
+
+    for key in list(os.environ):
+        if key.startswith(("SCALE_", "CAMERA_", "RECOGNITION_", "DATABASE_", "DEFAULT_")):
+            monkeypatch.delenv(key, raising=False)
+    from app.services.scale.serial_scale import SerialScaleConfig
+
+    settings = Settings(_env_file=BASE_DIR / ".env.example")
+    assert settings.scale_serial_bytesize == 8
+    assert settings.scale_serial_stopbits == 1
+    assert settings.default_price_per_kg is not None
+    config = SerialScaleConfig.from_settings(settings)
+    assert config.line_terminator == b"\r\n"
+    assert config.stopbits == 1 and isinstance(config.stopbits, int)
+
+
+@pytest.mark.parametrize(("name", "value"), [("SCALE_SERIAL_BYTESIZE", "9"), ("SCALE_SERIAL_STOPBITS", "3")])
+def test_invalid_serial_frame_settings(monkeypatch, name, value):
+    monkeypatch.setenv(name, value)
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)

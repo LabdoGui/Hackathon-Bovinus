@@ -75,3 +75,18 @@ class AuditAction(StrEnum):
     CORRECTION = "correction"
     STATUS_CHANGE = "status_change"
     HARDWARE_FAILURE = "hardware_failure"
+
+
+class SerialProtocol(StrEnum):
+    CONTINUOUS = "continuous"  # a balança transmite leituras continuamente
+    REQUEST = "request"  # a balança responde a um comando enviado pelo computador
+
+
+class WeightUnit(StrEnum):
+    GRAM = "g"
+    KILOGRAM = "kg"
+
+
+class ReviewReason(StrEnum):
+    COST_UNAVAILABLE = "custo_indisponivel"
+    INACTIVE_FOOD = "alimento_inativo"
