@@ -1,0 +1,3 @@
+# Opcional: driver para usar PostgreSQL (DATABASE_MODE=postgresql)
+-r requirements.txt
+psycopg[binary]==3.3.9

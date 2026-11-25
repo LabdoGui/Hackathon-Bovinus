@@ -1,0 +1,14 @@
+[project]
+name = "pratocusto-ai"
+version = "0.1.0"
+description = "PratoCusto AI - backend local para pesagem, captura, reconhecimento e custo de pratos"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+filterwarnings = [
+    "error::sqlalchemy.exc.SAWarning",
+    # O Starlette 1.x recomenda o pacote "httpx2" no TestClient; o projeto usa HTTPX (requisito).
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]

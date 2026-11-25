@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Configuração local (pode conter segredos)
+.env
+
+# Dados gerados em tempo de execução
+data/
+logs/
+backups/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# IDEs / SO
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
