@@ -90,3 +90,19 @@ class WeightUnit(StrEnum):
 class ReviewReason(StrEnum):
     COST_UNAVAILABLE = "custo_indisponivel"
     INACTIVE_FOOD = "alimento_inativo"
+    LOW_CONFIDENCE = "confianca_baixa"
+    UNKNOWN_FOOD = "alimento_desconhecido"
+    NO_DETECTIONS = "nenhum_alimento_reconhecido"
+    INCONSISTENT_PROPORTIONS = "proporcoes_inconsistentes"
+    PROPORTION_NOT_PROVIDED = "proporcao_nao_informada"
+    POOR_IMAGE_QUALITY = "imagem_com_baixa_qualidade"
+    SIMULATED_RECOGNITION = "reconhecimento_simulado"
+
+
+class MockScenario(StrEnum):
+    RANDOM = "random"  # alimentos e confianças derivados do conteúdo da imagem (determinístico)
+    CONFIDENT = "confident"  # alta confiança
+    UNCERTAIN = "uncertain"  # um alimento com baixa confiança
+    UNKNOWN_FOOD = "unknown_food"  # inclui um alimento que não está cadastrado
+    EMPTY = "empty"  # nada reconhecido
+    FAILURE = "failure"  # simula indisponibilidade do serviço

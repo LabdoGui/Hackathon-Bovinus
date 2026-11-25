@@ -18,6 +18,7 @@ from app.core.enums import (
     CameraMode,
     DatabaseMode,
     Environment,
+    MockScenario,
     RecognitionMode,
     ScaleMode,
     SerialProtocol,
@@ -125,6 +126,23 @@ class Settings(BaseSettings):
     camera_blur_threshold: float = Field(default=100.0, ge=0)
     camera_empty_stddev_threshold: float = Field(default=4.0, ge=0, le=128)
 
+    # Reconhecimento de alimentos
+    recognition_min_confidence: Decimal = Field(default=Decimal("0.70"), ge=0, le=1)
+    recognition_proportion_tolerance: Decimal = Field(default=Decimal("0.05"), ge=0, le=1)
+    recognition_max_detections: int = Field(default=20, ge=1, le=100)
+    # Mock (SIMULADO: não existe modelo treinado)
+    recognition_mock_scenario: MockScenario = MockScenario.RANDOM
+    recognition_mock_requires_review: bool = True
+    # API externa (contrato descrito em docs/reconhecimento.md)
+    recognition_api_url: str | None = None
+    recognition_api_key: SecretStr | None = None
+    recognition_api_auth_header: str = "Authorization"
+    recognition_api_auth_scheme: str = "Bearer"
+    recognition_api_timeout_s: float = Field(default=15.0, gt=0, le=120)
+    recognition_api_max_response_kb: int = Field(default=512, ge=4, le=8192)
+    # Modelo local (estrutura preparada; nenhum modelo é fornecido)
+    recognition_local_model_path: Path | None = None
+
     # Segurança / HTTP
     cors_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://localhost:8000", "http://127.0.0.1:8000"]
@@ -196,6 +214,11 @@ class Settings(BaseSettings):
             except re.error as exc:
                 raise ValueError(f"SCALE_SERIAL_STABLE_REGEX inválida: {exc}") from exc
         return value
+
+    @field_validator("recognition_api_url", "recognition_api_key", "recognition_local_model_path", mode="before")
+    @classmethod
+    def _blank_is_none(cls, value: object) -> object:
+        return None if isinstance(value, str) and not value.strip() else value
 
     @model_validator(mode="after")
     def _camera_limits(self) -> "Settings":

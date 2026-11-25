@@ -12,6 +12,7 @@ from app.schemas.transaction import (
     CalculationRead,
     TransactionCancel,
     TransactionCreate,
+    TransactionFromRecognition,
     TransactionRead,
 )
 from app.services.scale_readings import ScaleReadingService
@@ -63,6 +64,30 @@ def create_transaction(
     idempotency_key: IdempotencyKey = None,
 ):
     transaction, created = _service(request, session, settings).create(
+        data, idempotency_key=idempotency_key, operator=operator
+    )
+    if not created:
+        response.status_code = status.HTTP_200_OK
+    return transaction
+
+
+@router.post(
+    "/from-recognition",
+    response_model=TransactionRead,
+    status_code=status.HTTP_201_CREATED,
+    summary="Registrar transação a partir de um resultado de reconhecimento",
+    responses={200: {"model": TransactionRead, "description": "Repetição idempotente: transação já existente"}},
+)
+def create_transaction_from_recognition(
+    data: TransactionFromRecognition,
+    request: Request,
+    response: Response,
+    session: SessionDep,
+    settings: SettingsDep,
+    operator: OptionalOperator,
+    idempotency_key: IdempotencyKey = None,
+):
+    transaction, created = _service(request, session, settings).create_from_recognition(
         data, idempotency_key=idempotency_key, operator=operator
     )
     if not created:

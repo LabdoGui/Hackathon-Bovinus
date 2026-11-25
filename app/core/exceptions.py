@@ -53,3 +53,9 @@ class HardwareUnavailableError(AppError):
 class UnsupportedMediaTypeError(AppError):
     status_code = 415
     code = "unsupported_media_type"
+
+
+class ServiceUnavailableError(HardwareUnavailableError):
+    """Serviço externo/modelo de reconhecimento indisponível (também 503)."""
+
+    code = "recognition_unavailable"

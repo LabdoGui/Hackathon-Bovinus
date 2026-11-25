@@ -29,6 +29,9 @@ class TransactionRepository(Repository[Transaction]):
     def is_reading_used(self, scale_reading_id: uuid.UUID) -> bool:
         return self.exists(Transaction.scale_reading_id == scale_reading_id)
 
+    def is_recognition_used(self, recognition_result_id: uuid.UUID) -> bool:
+        return self.exists(Transaction.recognition_result_id == recognition_result_id)
+
     def list(
         self,
         *,

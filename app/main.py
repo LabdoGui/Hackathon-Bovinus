@@ -24,6 +24,7 @@ from app.core.security import API_KEY_HEADER_NAME
 from app.database.connection import Database
 from app.database.migrate import upgrade_to_head
 from app.services.camera import CameraService
+from app.services.recognition import build_recognition_service
 from app.services.scale import ScaleManager
 
 APP_DIR = Path(__file__).resolve().parent
@@ -51,6 +52,10 @@ OPENAPI_TAGS = [
         "name": "Transações",
         "description": "Pesagens com distribuição de peso, custo alimentar estimado, valor cobrado e "
         "margem bruta alimentar estimada.",
+    },
+    {
+        "name": "Reconhecimento",
+        "description": "Reconhecimento de alimentos (mock SIMULADO, API externa ou modelo local) e resultados.",
     },
     {"name": "Câmera", "description": "Webcam (OpenCV), pré-visualização, captura, envio manual e qualidade da imagem."},
 ]
@@ -82,6 +87,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         finally:
             app.state.scale.close()
             app.state.camera.close()
+            app.state.recognition.close()
             database.dispose()
             logger.info("%s finalizado", settings.app_name)
 
@@ -100,6 +106,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Nenhum hardware é aberto aqui: a porta serial só é aberta na primeira leitura.
     app.state.scale = ScaleManager(settings)
     app.state.camera = CameraService(settings)
+    app.state.recognition = build_recognition_service(settings)
 
     app.add_middleware(
         CORSMiddleware,

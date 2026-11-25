@@ -2,7 +2,7 @@ import uuid
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, Numeric, String
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, Numeric, String, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.enums import RecognitionMode, RecognitionStatus
@@ -37,6 +37,9 @@ class RecognitionResult(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     status: Mapped[RecognitionStatus] = mapped_column(str_enum(RecognitionStatus, 16), nullable=False, index=True)
     overall_confidence: Mapped[Decimal | None] = mapped_column(Numeric(5, 4))
     requires_review: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    review_reasons: Mapped[list[str]] = mapped_column(JSONType, nullable=False, default=list, server_default=text("'[]'"))
+    # Peso líquido usado para estimar o peso de cada alimento (quando informado).
+    net_weight_g: Mapped[Decimal | None] = mapped_column(Numeric(12, 1))
     detections: Mapped[list[dict[str, Any]]] = mapped_column(JSONType, nullable=False, default=list)
     error: Mapped[str | None] = mapped_column(String(255))
     processing_ms: Mapped[int | None] = mapped_column(Integer)

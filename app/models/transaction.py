@@ -52,8 +52,9 @@ class Transaction(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     image_capture_id: Mapped[uuid.UUID | None] = mapped_column(
         ForeignKey("image_captures.id", ondelete="SET NULL"), index=True
     )
+    # Único: um resultado de reconhecimento só pode originar uma transação.
     recognition_result_id: Mapped[uuid.UUID | None] = mapped_column(
-        ForeignKey("recognition_results.id", ondelete="SET NULL"), index=True
+        ForeignKey("recognition_results.id", ondelete="SET NULL"), index=True, unique=True
     )
 
     gross_weight_g: Mapped[Decimal] = mapped_column(Numeric(12, 1), nullable=False)

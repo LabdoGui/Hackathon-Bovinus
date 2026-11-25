@@ -15,8 +15,8 @@ self-service. Projetada para rodar em um notebook ou mini-PC **Windows** (sem Ra
 | 1 | Estrutura, configurações, banco de dados e API básica | ✅ Concluída |
 | 2 | Simulador de balança e motor de cálculo | ✅ Concluída |
 | 3 | Webcam e captura | ✅ Concluída |
-| 4 | Reconhecimento mock e interface abstrata de IA | ⏳ Aguardando autorização |
-| 5 | Revisão humana, histórico e relatórios | — |
+| 4 | Reconhecimento mock e interface abstrata de IA | ✅ Concluída |
+| 5 | Revisão humana, histórico e relatórios | ⏳ Aguardando autorização |
 | 6 | Testes, segurança, documentação e empacotamento | — |
 
 Detalhes de cada fase em [`docs/fases/`](docs/fases/).
@@ -96,6 +96,9 @@ Todas as configurações vêm de variáveis de ambiente (ou do arquivo `.env`). 
 | `SCALE_SERIAL_*` | porta, baud, paridade, protocolo etc. | ver [docs/balanca-serial.md](docs/balanca-serial.md) |
 | `CAMERA_DEVICE_INDEX` / `CAMERA_BACKEND` | webcam e backend (`auto`, `dshow`, `msmf`) | `0` / `auto` |
 | `CAMERA_*` | resolução, limiares de qualidade, tempo limite etc. | ver [docs/webcam.md](docs/webcam.md) |
+| `RECOGNITION_MIN_CONFIDENCE` | confiança mínima antes de ir para revisão | `0.70` |
+| `RECOGNITION_MOCK_SCENARIO` | cenário do mock **simulado** | `random` |
+| `RECOGNITION_API_*` | URL, chave e cabeçalho da API externa | ver [docs/reconhecimento.md](docs/reconhecimento.md) |
 
 ### PostgreSQL (opção futura)
 
@@ -106,13 +109,22 @@ pip install -r requirements-postgres.txt
 Depois defina `DATABASE_MODE=postgresql` e `DATABASE_URL=postgresql+psycopg://usuario:senha@host:5432/pratocusto`
 (ou os campos `POSTGRES_*`). As regras de negócio não mudam: só a conexão.
 
-## Fluxo básico (balança simulada)
+## Fluxo básico (tudo simulado)
 
 1. `POST /api/v1/scale/readings` com `{"simulated_weight_g": 650, "tare_g": 150}` → leitura estável.
 2. `POST /api/v1/transactions` com o `id` da leitura e os alimentos com suas proporções
    (cabeçalho opcional `Idempotency-Key`).
 3. A resposta traz peso líquido, peso de cada alimento, custo alimentar estimado, valor cobrado e
    margem bruta alimentar estimada.
+
+Com captura e reconhecimento (**simulado** no modo `mock`; não há modelo treinado):
+
+1. `POST /api/v1/camera/captures` (ou `/camera/uploads`) → `image_capture_id`.
+2. `POST /api/v1/recognition/analyze` com `image_capture_id` e `scale_reading_id`.
+3. `POST /api/v1/transactions/from-recognition` com o resultado e a leitura → transação
+   (`pending_review` quando simulada, incerta ou com custo desconhecido).
+
+Detalhes em [docs/reconhecimento.md](docs/reconhecimento.md).
 
 Para conectar uma balança real, veja [docs/balanca-serial.md](docs/balanca-serial.md); para a webcam, [docs/webcam.md](docs/webcam.md).
 
@@ -124,7 +136,7 @@ app/
   cli.py               # comandos: migrate, seed, create-operator
   core/                # config, logging (com mascaramento), security, exceções, middleware
   api/                 # deps, tratamento de erros, router /api/v1
-    routes/            # health, operators, ingredients, recipes, foods, scale, transactions, camera, (recognition, reports)
+    routes/            # health, operators, ingredients, recipes, foods, scale, transactions, camera, recognition, (reports)
   models/              # entidades SQLAlchemy
   schemas/             # modelos Pydantic de entrada/saída
   repositories/        # consultas ao banco (persistência)
@@ -132,7 +144,8 @@ app/
     scale/             # ScaleService: mock, serial, manual + estabilização
     calculations/      # motor de cálculo (funções puras)
     camera/            # CameraService (OpenCV), qualidade e armazenamento de imagens
-    recognition/ reports/   # fases 4–5
+    recognition/       # FoodRecognitionService: mock (simulado), API, local + interpretação
+    reports/           # fase 5
   database/            # conexão, migrações Alembic, seed
   templates/ static/   # páginas Jinja2
   utils/

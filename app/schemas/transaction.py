@@ -60,6 +60,26 @@ class TransactionCreate(_ItemsMixin):
     notes: LongText | None = None
 
 
+class TransactionFromRecognition(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "recognition_result_id": "00000000-0000-0000-0000-000000000000",
+                    "scale_reading_id": "00000000-0000-0000-0000-000000000001",
+                }
+            ]
+        }
+    )
+
+    recognition_result_id: uuid.UUID = Field(description="Resultado de POST /recognition/analyze.")
+    scale_reading_id: uuid.UUID = Field(description="Leitura estável da balança (POST /scale/readings).")
+    price_per_kg: PricePerKg | None = Field(
+        default=None, description="Preço cobrado por kg. Vazio = DEFAULT_PRICE_PER_KG da configuração."
+    )
+    notes: LongText | None = None
+
+
 class CalculationPreviewIn(_ItemsMixin):
     gross_weight_g: Grams
     tare_g: Grams = Decimal("0")

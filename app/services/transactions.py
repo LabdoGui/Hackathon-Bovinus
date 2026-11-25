@@ -6,6 +6,7 @@ import hashlib
 import json
 import uuid
 from datetime import UTC, datetime
+from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
 
@@ -13,12 +14,17 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.config import Settings
-from app.core.enums import AuditAction, ItemSource, ReviewReason, TransactionStatus
+from app.core.enums import AuditAction, ItemSource, RecognitionStatus, ReviewReason, TransactionStatus
 from app.core.exceptions import BusinessRuleError, ConflictError, NotFoundError
-from app.models import Food, Operator, Transaction, TransactionItem
+from app.models import Food, Operator, RecognitionResult, Transaction, TransactionItem
 from app.repositories.catalog import FoodRepository
 from app.repositories.transaction import TransactionRepository
-from app.schemas.transaction import CalculationPreviewIn, TransactionCreate, TransactionItemIn
+from app.schemas.transaction import (
+    CalculationPreviewIn,
+    TransactionCreate,
+    TransactionFromRecognition,
+    TransactionItemIn,
+)
 from app.services.audit import AuditService
 from app.services.calculations import PlateCalculation, PlateItemInput, calculate_plate
 from app.services.costing import food_cost_per_kg
@@ -30,6 +36,19 @@ from app.utils.serialization import entity_snapshot
 def _fingerprint(payload: dict[str, Any]) -> str:
     canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+@dataclass(frozen=True)
+class ItemSpec:
+    """Item a gravar: alimento cadastrado (ou ``None`` se não reconhecido no cadastro) e sua proporção."""
+
+    food: Food | None
+    name: str
+    recognition_class: str | None
+    proportion: Decimal
+    source: ItemSource
+    confidence: Decimal | None = None
+    extra: dict[str, Any] | None = None
 
 
 class TransactionService:
@@ -66,19 +85,19 @@ class TransactionService:
         return [found[item.food_id] for item in items]
 
     def _calculate(
-        self, *, gross: Decimal, tare: Decimal, price: Decimal, items: list[TransactionItemIn], foods: list[Food]
+        self, *, gross: Decimal, tare: Decimal, price: Decimal, proportions: list[Decimal], foods: list[Food | None]
     ) -> tuple[PlateCalculation, list[str]]:
-        costs = [food_cost_per_kg(food) for food in foods]
+        costs = [food_cost_per_kg(food) if food is not None else None for food in foods]
         calculation = calculate_plate(
             gross_weight_g=gross,
             tare_g=tare,
             price_per_kg=price,
-            items=[PlateItemInput(item.proportion, cost) for item, cost in zip(items, costs, strict=True)],
+            items=[PlateItemInput(p, cost) for p, cost in zip(proportions, costs, strict=True)],
         )
         reasons: list[str] = []
         if not calculation.cost_complete:
             reasons.append(ReviewReason.COST_UNAVAILABLE.value)
-        if any(not food.active for food in foods):
+        if any(food is not None and not food.active for food in foods):
             reasons.append(ReviewReason.INACTIVE_FOOD.value)
         return calculation, reasons
 
@@ -89,7 +108,7 @@ class TransactionService:
             gross=data.gross_weight_g,
             tare=data.tare_g,
             price=self._price(data.price_per_kg),
-            items=data.items,
+            proportions=[item.proportion for item in data.items],
             foods=foods,
         )
         return {
@@ -122,32 +141,132 @@ class TransactionService:
     def create(
         self, data: TransactionCreate, *, idempotency_key: str | None, operator: Operator | None
     ) -> tuple[Transaction, bool]:
-        """Cria a transação. Retorna ``(transação, criada)``; ``criada=False`` em repetição idempotente."""
-        fingerprint = _fingerprint(data.model_dump(mode="json"))
-        if idempotency_key:
-            existing = self.repository.get_by_idempotency_key(idempotency_key)
-            if existing is not None:
-                return self._replay(existing, fingerprint), False
+        """Cria a transação com alimentos informados manualmente.
 
-        reading = self.readings.repository.get(data.scale_reading_id)
-        if reading is None:
+        Retorna ``(transação, criada)``; ``criada=False`` em repetição idempotente.
+        """
+        fingerprint = _fingerprint({"kind": "manual", **data.model_dump(mode="json")})
+        if idempotency_key and (existing := self.repository.get_by_idempotency_key(idempotency_key)):
+            return self._replay(existing, fingerprint), False
+        foods = self._load_foods(data.items)
+        specs = [
+            ItemSpec(food, food.name, food.recognition_class, item.proportion, ItemSource.MANUAL)
+            for food, item in zip(foods, data.items, strict=True)
+        ]
+        return self._store(
+            reading_id=data.scale_reading_id,
+            specs=specs,
+            price_per_kg=data.price_per_kg,
+            notes=data.notes,
+            idempotency_key=idempotency_key,
+            fingerprint=fingerprint,
+            operator=operator,
+            recognition=None,
+        )
+
+    def create_from_recognition(
+        self, data: TransactionFromRecognition, *, idempotency_key: str | None, operator: Operator | None
+    ) -> tuple[Transaction, bool]:
+        """Cria a transação a partir de um resultado de reconhecimento e uma leitura da balança.
+
+        Os alimentos reconhecidos entram como itens ``source=recognition``. Resultado incerto,
+        alimento fora do cadastro, custo desconhecido ou reconhecimento simulado levam a
+        transação para revisão humana (``pending_review``).
+        """
+        fingerprint = _fingerprint({"kind": "recognition", **data.model_dump(mode="json")})
+        if idempotency_key and (existing := self.repository.get_by_idempotency_key(idempotency_key)):
+            return self._replay(existing, fingerprint), False
+
+        recognition = self.session.get(RecognitionResult, data.recognition_result_id)
+        if recognition is None:
             raise BusinessRuleError(
-                "Leitura da balança não encontrada.", details={"scale_reading_id": str(data.scale_reading_id)}
+                "Resultado de reconhecimento não encontrado.",
+                details={"recognition_result_id": str(data.recognition_result_id)},
             )
+        if recognition.status is RecognitionStatus.FAILED:
+            raise BusinessRuleError(
+                "O reconhecimento falhou; informe os alimentos manualmente (POST /api/v1/transactions)."
+            )
+        detections = [d for d in recognition.detections if Decimal(str(d["proportion"])) > 0]
+        if not detections:
+            raise BusinessRuleError(
+                "Nenhum alimento foi reconhecido; informe os alimentos manualmente (POST /api/v1/transactions)."
+            )
+        if self.repository.is_recognition_used(recognition.id):
+            raise ConflictError("Este resultado de reconhecimento já foi usado em outra transação.")
+
+        foods = self.foods.get_many(
+            uuid.UUID(str(d["food_id"])) for d in detections if d.get("food_id")
+        )
+        specs = []
+        for detection in detections:
+            food = foods.get(uuid.UUID(str(detection["food_id"]))) if detection.get("food_id") else None
+            extra = {
+                "recognition_estimated_weight_g": detection.get("estimated_weight_g"),
+                "recognition_segmented_area_ratio": detection.get("segmented_area_ratio"),
+                "recognition_origin": detection.get("source"),
+            }
+            if food is None:
+                extra["food_not_in_catalog"] = True
+            specs.append(
+                ItemSpec(
+                    food=food,
+                    name=food.name if food else str(detection["name"]),
+                    recognition_class=str(detection["recognition_class"]),
+                    proportion=Decimal(str(detection["proportion"])),
+                    source=ItemSource.RECOGNITION,
+                    confidence=Decimal(str(detection["confidence"])),
+                    extra=extra,
+                )
+            )
+        reasons = list(recognition.review_reasons or [])
+        if recognition.is_simulated and self.settings.recognition_mock_requires_review:
+            reasons.append(ReviewReason.SIMULATED_RECOGNITION.value)
+        return self._store(
+            reading_id=data.scale_reading_id,
+            specs=specs,
+            price_per_kg=data.price_per_kg,
+            notes=data.notes,
+            idempotency_key=idempotency_key,
+            fingerprint=fingerprint,
+            operator=operator,
+            recognition=recognition,
+            extra_reasons=reasons,
+        )
+
+    def _store(
+        self,
+        *,
+        reading_id: uuid.UUID,
+        specs: list[ItemSpec],
+        price_per_kg: Decimal | None,
+        notes: str | None,
+        idempotency_key: str | None,
+        fingerprint: str,
+        operator: Operator | None,
+        recognition: RecognitionResult | None,
+        extra_reasons: list[str] | None = None,
+    ) -> tuple[Transaction, bool]:
+        reading = self.readings.repository.get(reading_id)
+        if reading is None:
+            raise BusinessRuleError("Leitura da balança não encontrada.", details={"scale_reading_id": str(reading_id)})
         issues = self.readings.issues(reading, check_age=True)
         if issues:
             raise BusinessRuleError("Leitura da balança não pode ser usada.", details={"issues": issues})
         if self.repository.is_reading_used(reading.id):
             raise ConflictError("Esta leitura da balança já foi usada em outra transação.")
 
-        foods = self._load_foods(data.items)
         calculation, reasons = self._calculate(
             gross=reading.gross_weight_g,
             tare=reading.tare_g,
-            price=self._price(data.price_per_kg),
-            items=data.items,
-            foods=foods,
+            price=self._price(price_per_kg),
+            proportions=[spec.proportion for spec in specs],
+            foods=[spec.food for spec in specs],
         )
+        for reason in extra_reasons or []:
+            if reason not in reasons:
+                reasons.append(reason)
+
         now = datetime.now(UTC)
         requires_review = bool(reasons)
         transaction = Transaction(
@@ -157,6 +276,8 @@ class TransactionService:
             status=TransactionStatus.PENDING_REVIEW if requires_review else TransactionStatus.CONFIRMED,
             operator_id=operator.id if operator else None,
             scale_reading_id=reading.id,
+            image_capture_id=recognition.image_capture_id if recognition else None,
+            recognition_result_id=recognition.id if recognition else None,
             gross_weight_g=calculation.gross_weight_g,
             tare_g=calculation.tare_g,
             net_weight_g=calculation.net_weight_g,
@@ -167,24 +288,29 @@ class TransactionService:
             gross_margin_pct=calculation.gross_margin_pct,
             requires_review=requires_review,
             review_reasons=reasons,
-            notes=data.notes,
+            notes=notes,
             confirmed_at=None if requires_review else now,
         )
-        transaction.items = [
-            TransactionItem(
-                position=index,
-                food_id=food.id,
-                food_name=food.name,
-                recognition_class=food.recognition_class,
-                source=ItemSource.MANUAL,
-                proportion=result.proportion,
-                weight_g=result.weight_g,
-                cost_per_kg=result.cost_per_kg,
-                cost=result.cost,
-                extra={"cost_unavailable": "sem_ficha_tecnica"} if result.cost_per_kg is None else None,
+        transaction.items = []
+        for index, (spec, result) in enumerate(zip(specs, calculation.items, strict=True)):
+            extra = dict(spec.extra or {})
+            if result.cost_per_kg is None:
+                extra["cost_unavailable"] = "sem_ficha_tecnica" if spec.food is not None else "alimento_fora_do_cadastro"
+            transaction.items.append(
+                TransactionItem(
+                    position=index,
+                    food_id=spec.food.id if spec.food else None,
+                    food_name=spec.name,
+                    recognition_class=spec.recognition_class,
+                    source=spec.source,
+                    confidence=spec.confidence,
+                    proportion=result.proportion,
+                    weight_g=result.weight_g,
+                    cost_per_kg=result.cost_per_kg,
+                    cost=result.cost,
+                    extra=extra or None,
+                )
             )
-            for index, (food, result) in enumerate(zip(foods, calculation.items, strict=True))
-        ]
         self.session.add(transaction)
         try:
             self.session.flush()
@@ -200,7 +326,7 @@ class TransactionService:
             self.session.rollback()
             if idempotency_key and (existing := self.repository.get_by_idempotency_key(idempotency_key)):
                 return self._replay(existing, fingerprint), False
-            raise ConflictError("Transação duplicada (leitura da balança já utilizada).") from exc
+            raise ConflictError("Transação duplicada (leitura ou reconhecimento já utilizado).") from exc
         return self.get(transaction.id), True
 
     @staticmethod
