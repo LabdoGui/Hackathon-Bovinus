@@ -102,6 +102,29 @@ class Settings(BaseSettings):
     scale_serial_unit: WeightUnit = WeightUnit.KILOGRAM
     scale_serial_encoding: str = "ascii"
 
+    # Câmera (OpenCV)
+    camera_device_index: int = Field(default=0, ge=0, le=63)
+    # auto | dshow (DirectShow, Windows) | msmf (Media Foundation, Windows) | v4l2 (Linux)
+    camera_backend: Literal["auto", "dshow", "msmf", "v4l2"] = "auto"
+    camera_max_probe: int = Field(default=5, ge=1, le=20)
+    camera_width: int = Field(default=1280, ge=160, le=7680)
+    camera_height: int = Field(default=720, ge=120, le=4320)
+    camera_min_width: int = Field(default=640, ge=32, le=7680)
+    camera_min_height: int = Field(default=480, ge=32, le=4320)
+    camera_max_pixels: int = Field(default=40_000_000, ge=1_000_000, le=200_000_000)
+    camera_warmup_frames: int = Field(default=5, ge=0, le=60)
+    camera_flush_frames: int = Field(default=2, ge=0, le=30)
+    camera_timeout_s: float = Field(default=5.0, gt=0, le=60)
+    camera_jpeg_quality: int = Field(default=90, ge=50, le=100)
+    camera_preview_fps: float = Field(default=5.0, gt=0, le=30)
+    camera_preview_max_seconds: int = Field(default=300, ge=5, le=3600)
+    camera_preview_width: int = Field(default=640, ge=160, le=1920)
+    # Detecção básica de qualidade (heurísticas; ajuste conforme a iluminação do local)
+    camera_dark_threshold: float = Field(default=40.0, ge=0, le=255)
+    camera_bright_threshold: float = Field(default=235.0, ge=0, le=255)
+    camera_blur_threshold: float = Field(default=100.0, ge=0)
+    camera_empty_stddev_threshold: float = Field(default=4.0, ge=0, le=128)
+
     # Segurança / HTTP
     cors_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://localhost:8000", "http://127.0.0.1:8000"]
@@ -173,6 +196,12 @@ class Settings(BaseSettings):
             except re.error as exc:
                 raise ValueError(f"SCALE_SERIAL_STABLE_REGEX inválida: {exc}") from exc
         return value
+
+    @model_validator(mode="after")
+    def _camera_limits(self) -> "Settings":
+        if self.camera_min_width > self.camera_width or self.camera_min_height > self.camera_height:
+            raise ValueError("CAMERA_MIN_WIDTH/HEIGHT não podem ser maiores que CAMERA_WIDTH/HEIGHT.")
+        return self
 
     @model_validator(mode="after")
     def _resolve_paths_and_db(self) -> "Settings":

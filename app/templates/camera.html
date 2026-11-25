@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Câmera · {{ app_name }}{% endblock %}
+{% block content %}
+<h1>Teste da câmera</h1>
+<p class="muted">Pré-visualização, captura e envio manual. Página de apoio à instalação; o painel gerencial vem na Fase 5.</p>
+
+<section class="card">
+  <h2>Pré-visualização</h2>
+  <p id="status" class="muted">Carregando status…</p>
+  <img id="preview" class="preview" alt="Pré-visualização da câmera">
+  <div class="actions">
+    <button id="start" type="button">Iniciar pré-visualização</button>
+    <button id="stop" type="button">Parar</button>
+    <button id="capture" type="button">Capturar imagem</button>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Envio manual</h2>
+  <form id="upload-form">
+    <input id="file" name="file" type="file" accept="image/jpeg,image/png,image/webp" required>
+    <button type="submit">Enviar imagem</button>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Resultado</h2>
+  <p id="result" class="muted">Nenhuma captura ainda.</p>
+  <ul id="warnings"></ul>
+  <img id="captured" class="preview" alt="">
+</section>
+
+<script>
+const api = "{{ api_prefix }}";
+const $ = (id) => document.getElementById(id);
+
+async function loadStatus() {
+  try {
+    const r = await fetch(`${api}/camera/status`);
+    const s = await r.json();
+    $("status").textContent = `Modo: ${s.mode} · câmera ${s.device_index} · ${s.enabled ? "habilitada" : "desativada (somente envio manual)"}`
+      + (s.last_error ? ` · último erro: ${s.last_error}` : "");
+  } catch (e) {
+    $("status").textContent = "Não foi possível consultar o status.";
+  }
+}
+
+function showError(body, fallback) {
+  const message = body && body.error ? body.error.message : fallback;
+  $("result").textContent = `Erro: ${message}`;
+  $("warnings").replaceChildren();
+  $("captured").removeAttribute("src");
+}
+
+function showCapture(c) {
+  $("result").textContent = `Captura ${c.id} · ${c.source} · ${c.width}x${c.height} · brilho ${c.brightness} · nitidez ${c.sharpness}`;
+  const items = (c.warnings.length ? c.warnings : ["Sem avisos de qualidade."]).map((w) => {
+    const li = document.createElement("li");
+    li.textContent = w;
+    return li;
+  });
+  $("warnings").replaceChildren(...items);
+  $("captured").src = `${c.image_url}?t=${Date.now()}`;
+}
+
+$("start").onclick = () => { $("preview").src = `${api}/camera/preview/stream?t=${Date.now()}`; };
+$("stop").onclick = () => { $("preview").removeAttribute("src"); };
+
+$("capture").onclick = async () => {
+  $("result").textContent = "Capturando…";
+  const r = await fetch(`${api}/camera/captures`, { method: "POST" });
+  const body = await r.json().catch(() => null);
+  r.ok ? showCapture(body) : showError(body, `HTTP ${r.status}`);
+  loadStatus();
+};
+
+$("upload-form").onsubmit = async (event) => {
+  event.preventDefault();
+  const data = new FormData();
+  data.append("file", $("file").files[0]);
+  $("result").textContent = "Enviando…";
+  const r = await fetch(`${api}/camera/uploads`, { method: "POST", body: data });
+  const body = await r.json().catch(() => null);
+  r.ok ? showCapture(body) : showError(body, `HTTP ${r.status}`);
+};
+
+loadStatus();
+</script>
+{% endblock %}

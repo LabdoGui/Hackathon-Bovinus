@@ -48,3 +48,8 @@ class PayloadTooLargeError(AppError):
 class HardwareUnavailableError(AppError):
     status_code = 503
     code = "hardware_unavailable"
+
+
+class UnsupportedMediaTypeError(AppError):
+    status_code = 415
+    code = "unsupported_media_type"

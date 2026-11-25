@@ -14,8 +14,8 @@ self-service. Projetada para rodar em um notebook ou mini-PC **Windows** (sem Ra
 |------|--------|--------|
 | 1 | Estrutura, configurações, banco de dados e API básica | ✅ Concluída |
 | 2 | Simulador de balança e motor de cálculo | ✅ Concluída |
-| 3 | Webcam e captura | ⏳ Aguardando autorização |
-| 4 | Reconhecimento mock e interface abstrata de IA | — |
+| 3 | Webcam e captura | ✅ Concluída |
+| 4 | Reconhecimento mock e interface abstrata de IA | ⏳ Aguardando autorização |
 | 5 | Revisão humana, histórico e relatórios | — |
 | 6 | Testes, segurança, documentação e empacotamento | — |
 
@@ -72,6 +72,7 @@ python -m app
 | http://127.0.0.1:8000/docs | Documentação interativa (Swagger/OpenAPI) |
 | http://127.0.0.1:8000/redoc | Documentação ReDoc |
 | http://127.0.0.1:8000/api/v1/health | Saúde da API |
+| http://127.0.0.1:8000/camera | Teste da webcam (pré-visualização, captura, upload) |
 
 ## Configuração
 
@@ -93,6 +94,8 @@ Todas as configurações vêm de variáveis de ambiente (ou do arquivo `.env`). 
 | `SCALE_MIN_WEIGHT_G` | peso líquido mínimo (g) | `10` |
 | `SCALE_STABLE_SAMPLES` / `SCALE_STABLE_TOLERANCE_G` | critério de estabilidade | `3` / `2` |
 | `SCALE_SERIAL_*` | porta, baud, paridade, protocolo etc. | ver [docs/balanca-serial.md](docs/balanca-serial.md) |
+| `CAMERA_DEVICE_INDEX` / `CAMERA_BACKEND` | webcam e backend (`auto`, `dshow`, `msmf`) | `0` / `auto` |
+| `CAMERA_*` | resolução, limiares de qualidade, tempo limite etc. | ver [docs/webcam.md](docs/webcam.md) |
 
 ### PostgreSQL (opção futura)
 
@@ -111,7 +114,7 @@ Depois defina `DATABASE_MODE=postgresql` e `DATABASE_URL=postgresql+psycopg://us
 3. A resposta traz peso líquido, peso de cada alimento, custo alimentar estimado, valor cobrado e
    margem bruta alimentar estimada.
 
-Para conectar uma balança real, veja [docs/balanca-serial.md](docs/balanca-serial.md).
+Para conectar uma balança real, veja [docs/balanca-serial.md](docs/balanca-serial.md); para a webcam, [docs/webcam.md](docs/webcam.md).
 
 ## Arquitetura
 
@@ -121,14 +124,15 @@ app/
   cli.py               # comandos: migrate, seed, create-operator
   core/                # config, logging (com mascaramento), security, exceções, middleware
   api/                 # deps, tratamento de erros, router /api/v1
-    routes/            # health, operators, ingredients, recipes, foods, scale, transactions, (camera, recognition, reports)
+    routes/            # health, operators, ingredients, recipes, foods, scale, transactions, camera, (recognition, reports)
   models/              # entidades SQLAlchemy
   schemas/             # modelos Pydantic de entrada/saída
   repositories/        # consultas ao banco (persistência)
   services/            # regras de negócio
     scale/             # ScaleService: mock, serial, manual + estabilização
     calculations/      # motor de cálculo (funções puras)
-    camera/ recognition/ reports/   # fases 3–5
+    camera/            # CameraService (OpenCV), qualidade e armazenamento de imagens
+    recognition/ reports/   # fases 4–5
   database/            # conexão, migrações Alembic, seed
   templates/ static/   # páginas Jinja2
   utils/

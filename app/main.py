@@ -23,6 +23,7 @@ from app.core.middleware import RequestContextMiddleware
 from app.core.security import API_KEY_HEADER_NAME
 from app.database.connection import Database
 from app.database.migrate import upgrade_to_head
+from app.services.camera import CameraService
 from app.services.scale import ScaleManager
 
 APP_DIR = Path(__file__).resolve().parent
@@ -51,6 +52,7 @@ OPENAPI_TAGS = [
         "description": "Pesagens com distribuição de peso, custo alimentar estimado, valor cobrado e "
         "margem bruta alimentar estimada.",
     },
+    {"name": "Câmera", "description": "Webcam (OpenCV), pré-visualização, captura, envio manual e qualidade da imagem."},
 ]
 
 
@@ -79,6 +81,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             yield
         finally:
             app.state.scale.close()
+            app.state.camera.close()
             database.dispose()
             logger.info("%s finalizado", settings.app_name)
 
@@ -96,6 +99,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.db = Database(settings.sqlalchemy_url, echo=settings.db_echo)
     # Nenhum hardware é aberto aqui: a porta serial só é aberta na primeira leitura.
     app.state.scale = ScaleManager(settings)
+    app.state.camera = CameraService(settings)
 
     app.add_middleware(
         CORSMiddleware,
@@ -126,6 +130,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "settings": settings,
                 "api_prefix": API_PREFIX,
             },
+        )
+
+    @app.get("/camera", response_class=HTMLResponse, include_in_schema=False)
+    def camera_page(request: Request):
+        return templates.TemplateResponse(
+            request,
+            "camera.html",
+            {"app_name": settings.app_name, "version": __version__, "api_prefix": API_PREFIX},
         )
 
     return app
