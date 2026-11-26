@@ -1,27 +1,63 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Backend em execução</h1>
-<p>API local do PratoCusto AI.</p>
-
-<section class="card">
-  <h2>Configuração atual</h2>
-  <table>
-    <tr><th>Ambiente</th><td>{{ settings.app_env.value }}</td></tr>
-    <tr><th>Banco de dados</th><td>{{ settings.database_mode.value }}</td></tr>
-    <tr><th>Balança</th><td>{{ settings.scale_mode.value }}</td></tr>
-    <tr><th>Câmera</th><td>{{ settings.camera_mode.value }}</td></tr>
-    <tr><th>Reconhecimento</th><td>{{ settings.recognition_mode.value }}</td></tr>
-  </table>
+<section class="hero">
+  <div>
+    <p class="kicker">Restaurante por quilo</p>
+    <h1>O custo real de cada <span class="p">prato</span>, na hora da pesagem.</h1>
+    <p class="lead">Balança, câmera e fichas técnicas no mesmo fluxo: o {{ app_name }} calcula o valor cobrado, o custo alimentar estimado e a margem bruta de cada prato.</p>
+    <div class="actions">
+      <a class="button lg" href="{{ page_url('balcao') }}">Abrir o balcão</a>
+      <a class="button lg secondary" href="{{ page_url('dashboard') }}">Ver o painel</a>
+    </div>
+  </div>
+  <img class="hero-mark" src="{{ url_for('static', path='img/icone.svg') }}" alt="">
 </section>
 
-<section class="card">
-  <h2>Links</h2>
-  <ul>
-    <li><a href="/docs">Documentação interativa (Swagger)</a></li>
-    <li><a href="/redoc">Documentação (ReDoc)</a></li>
-    <li><a href="{{ api_prefix }}/health">Saúde da API</a></li>
-    <li><a href="/dashboard">Painel gerencial</a> (exige chave de gerente/admin)</li>
-    <li><a href="/camera">Teste da câmera</a></li>
-  </ul>
-</section>
+<div class="tiles">
+  <a class="tile" href="{{ page_url('balcao') }}">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16"/><path d="M6 19l1.5-7h9L18 19"/><path d="M12 12V6"/><path d="M8 6h8"/></svg></span>
+    <strong>Balcão</strong><span>Pesa, fotografa, reconhece e registra o prato num clique.</span>
+  </a>
+  <a class="tile" href="{{ page_url('camera') }}">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+    <strong>Câmera</strong><span>Pré-visualização, captura com pasta numerada e envio manual.</span>
+  </a>
+  <a class="tile" href="{{ page_url('dashboard') }}">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg></span>
+    <strong>Painel gerencial</strong><span>Valor cobrado, custo, margem, fila de revisão e CSV.</span>
+  </a>
+  <a class="tile" href="{{ docs_url }}">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 7l-5 5 5 5"/><path d="M16 7l5 5-5 5"/></svg></span>
+    <strong>API REST</strong><span>{% if demo %}Lista de endpoints e documentação no GitHub.{% else %}Documentação interativa (Swagger) de todos os endpoints.{% endif %}</span>
+  </a>
+</div>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Configuração atual</h2>
+    <div class="chips">
+      <span class="chip">Ambiente <b>{{ settings.app_env.value }}</b></span>
+      <span class="chip">Banco <b>{{ settings.database_mode.value }}</b></span>
+      <span class="chip">Balança <b>{{ settings.scale_mode.value }}</b></span>
+      <span class="chip">Câmera <b>{{ settings.camera_mode.value }}</b></span>
+      <span class="chip">Reconhecimento <b>{{ settings.recognition_mode.value }}</b></span>
+    </div>
+    {% if demo %}<p class="muted notes">Na versão instalada no restaurante, a balança e a webcam ficam ligadas ao computador do caixa e os dados ficam num banco SQLite local.</p>{% endif %}
+  </section>
+  <section class="card">
+    <h2>Links</h2>
+    <ul class="notes">
+      {% if demo %}
+      <li><a href="{{ repo_url }}">Código-fonte no GitHub</a></li>
+      <li><a href="{{ docs_url }}">Endpoints da API</a></li>
+      <li><a href="{{ repo_url }}/blob/{{ repo_branch }}/docs/instalacao-windows.md">Instalação no Windows</a></li>
+      {% else %}
+      <li><a href="/docs">Documentação interativa (Swagger)</a></li>
+      <li><a href="/redoc">Documentação (ReDoc)</a></li>
+      <li><a href="{{ api_prefix }}/health">Saúde da API</a></li>
+      <li><a href="{{ page_url('dashboard') }}">Painel gerencial</a> (exige chave de gerente/admin)</li>
+      {% endif %}
+    </ul>
+  </section>
+</div>
 {% endblock %}

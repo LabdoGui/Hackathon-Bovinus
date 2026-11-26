@@ -4,6 +4,9 @@ API REST local que conecta **balança**, **webcam USB**, **reconhecimento de ali
 **motor de cálculo de custos**, **banco de dados** e **painel gerencial** de um restaurante
 self-service. Roda em um notebook ou mini-PC **Windows** (sem Raspberry Pi).
 
+**Demonstração online:** https://labdogui.github.io/Hackathon-Bovinus/ — roda no navegador, com
+balança e reconhecimento simulados e dados fictícios (como ativar: [docs/github-pages.md](docs/github-pages.md)).
+
 > ## Leia antes de usar em produção
 >
 > * **Não existe modelo de reconhecimento de alimentos treinado neste projeto.** O modo padrão
@@ -30,7 +33,11 @@ self-service. Roda em um notebook ou mini-PC **Windows** (sem Raspberry Pi).
 | 5 | Revisão humana, histórico e relatórios | ✅ |
 | 6 | Testes, segurança, documentação e empacotamento | ✅ |
 
-Relatório de cada fase em [docs/fases/](docs/fases/). **407 testes**, cobertura de código 98%.
+Relatório de cada fase em [docs/fases/](docs/fases/). **460 testes**.
+
+Depois das fases: página **Balcão** (pesa, fotografa, reconhece e registra num clique), nova
+identidade visual (tomate, tinta e creme; fonte Plus Jakarta Sans servida localmente) e o site de
+demonstração no GitHub Pages.
 
 ## Começando
 
@@ -47,8 +54,8 @@ cd Hackathon-Bovinus
 .\iniciar.bat
 ```
 
-Abra **http://127.0.0.1:8000/dashboard** e entre com a chave que o `create-operator` mostrou
-(aparece uma única vez).
+Abra **http://127.0.0.1:8000/** (página inicial) ou **/dashboard** e entre com a chave que o
+`create-operator` mostrou (aparece uma única vez).
 
 ### Docker
 
@@ -73,6 +80,8 @@ python -m app
 
 | URL | Descrição |
 |-----|-----------|
+| `/` | Página inicial com atalhos e a configuração atual |
+| `/balcao` | Balcão: pesa, fotografa, reconhece e registra o prato num clique |
 | `/dashboard` | Painel gerencial (chave de gerente/admin) |
 | `/review?id=…` | Revisão de uma transação (chave de operador) |
 | `/camera` | Teste da webcam (pré-visualização, captura, upload) |
@@ -80,6 +89,9 @@ python -m app
 | `/api/v1/health` | Saúde da API |
 
 ## Como funciona (fluxo do dia a dia)
+
+Na página **/balcao** os passos 1 a 4 acontecem com um clique ("Pesar, fotografar e registrar").
+Pela API:
 
 1. **Balança** → `POST /api/v1/scale/readings` (peso estável, tara, peso mínimo).
 2. **Câmera** → `POST /api/v1/camera/captures` (ou `/uploads`) → valida a imagem.
@@ -131,6 +143,7 @@ PostgreSQL real**).
 | [docs/seguranca.md](docs/seguranca.md) | Controles, operação em rede, limites |
 | [docs/backup.md](docs/backup.md) | Backup e restauração |
 | [docs/docker.md](docs/docker.md) | Docker e PostgreSQL |
+| [docs/github-pages.md](docs/github-pages.md) | Site online (GitHub Pages): o que é simulado, como ativar e atualizar |
 | [docs/fases/](docs/fases/) | Relatório de cada fase de desenvolvimento |
 
 ## Arquitetura

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+  <meta name="description" content="Demonstração do PratoCusto AI: custo real de cada prato no restaurante por quilo.">
+  <meta name="theme-color" content="#E8401F">
+  <title>Painel gerencial · PratoCusto AI</title>
+  <link rel="icon" type="image/svg+xml" href="static/img/icone.svg">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="static/fonts/PlusJakartaSans.woff2">
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body data-api="/api/v1" data-require-key="false" data-pages="static">
+  
+  <div class="demo-banner" role="note">
+    <span><strong>Demonstração</strong> · roda só no seu navegador, com balança e reconhecimento simulados e dados fictícios.</span>
+    <button type="button" id="demo-reset">Recomeçar a demonstração</button>
+  </div>
+  
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="PratoCusto AI — início">
+      <img src="static/img/icone.svg" alt="">
+      <span class="wordmark"><span class="p">Prato</span>Custo<span class="ai">AI</span></span>
+    </a>
+    <nav aria-label="Páginas">
+      
+      <a href="index.html">Início</a>
+      
+      <a href="balcao.html">Balcão</a>
+      
+      <a href="camera.html">Câmera</a>
+      
+      <a href="dashboard.html" aria-current="page">Painel</a>
+      
+      <a href="https://github.com/LabdoGui/Hackathon-Bovinus/blob/claude/magical-fermat-438tis/docs/endpoints.md">API</a>
+    </nav>
+  </header>
+  <main class="container">
+    
+<div class="page-head">
+  <p class="kicker">Gestão</p>
+  <h1>Painel gerencial</h1>
+  <p class="lead">Valor cobrado, custo alimentar estimado e margem bruta do período, com a fila de pratos aguardando revisão.</p>
+</div>
+<div id="auth" class="card" hidden></div>
+
+<div id="content" hidden>
+  <form id="filters" class="card filters">
+    <label>De <input type="date" id="date-from"></label>
+    <label>Até <input type="date" id="date-to"></label>
+    <button type="submit">Atualizar</button>
+    <button type="button" id="export-csv" class="secondary">Exportar CSV</button>
+    <span id="period-label" class="muted"></span>
+  </form>
+  <p id="page-msg" class="msg info" hidden></p>
+
+  <section class="card">
+    <h2>Resumo</h2>
+    <div id="summary" class="metrics"></div>
+    <ul id="summary-notes" class="notes"></ul>
+  </section>
+
+  <section class="card" id="fila">
+    <h2>Fila de revisão</h2>
+    <div id="queue"></div>
+  </section>
+
+  <div class="grid-2">
+    <section class="card">
+      <h2>Valor cobrado por dia</h2>
+      <div id="by-day"></div>
+    </section>
+    <section class="card">
+      <h2>Revisões e correções</h2>
+      <div id="review-stats" class="metrics"></div>
+      <ul id="review-reasons" class="notes"></ul>
+      <div id="review-notes"></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>Por alimento</h2>
+    <div id="by-food"></div>
+  </section>
+</div>
+
+  </main>
+  <footer class="footer">PratoCusto AI v0.7.0 · custo e margem são estimativas calculadas a partir das fichas técnicas (margem bruta alimentar, não lucro líquido).</footer>
+  <script src="static/js/common.js"></script>
+  
+  <script src="static/js/demo-data.js"></script>
+  <script src="static/js/demo.js"></script>
+  
+  <script src="static/js/dashboard.js"></script>
+</body>
+</html>

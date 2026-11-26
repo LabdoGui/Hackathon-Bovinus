@@ -40,9 +40,13 @@
     }
   }
 
+  /* Transporte das chamadas: fetch do navegador. A demonstração estática (GitHub Pages)
+     troca por uma API simulada que roda no próprio navegador. */
+  const transport = { fetch: (url, init) => window.fetch(url, init) };
+
   async function api(path, opts) {
     opts = opts || {};
-    const headers = {};
+    const headers = Object.assign({}, opts.headers || {});
     const key = getKey();
     if (key) headers["X-API-Key"] = key;
     let url = API + path;
@@ -55,7 +59,7 @@
     const init = { method: opts.method || "GET", headers };
     if (opts.form !== undefined) { init.body = opts.form; } // FormData: o navegador define o Content-Type
     else if (opts.body !== undefined) { headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opts.body); }
-    const res = await fetch(url, init);
+    const res = await transport.fetch(url, init);
     if (opts.raw) {
       if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => null));
       return res;
@@ -69,6 +73,15 @@
   async function blobUrl(path) {
     const res = await api(path, { raw: true });
     return URL.createObjectURL(await res.blob());
+  }
+
+  /* Endereço de uma página: /balcao no servidor, balcao.html na versão estática. */
+  function pageUrl(name, params) {
+    const isStatic = document.body.dataset.pages === "static";
+    let url = isStatic ? name + ".html" : "/" + (name === "index" ? "" : name);
+    const qs = new URLSearchParams(params || {}).toString();
+    if (qs) url += "?" + qs;
+    return url;
   }
 
   function el(tag, props, children) {
@@ -162,5 +175,5 @@
     onReady(null);
   }
 
-  window.PC = { api, blobUrl, ApiError, el, clear, fmt, reasonText, showMessage, requireLogin, startPage, STATUS, ACTIONS, REASONS };
+  window.PC = { api, blobUrl, ApiError, el, clear, fmt, reasonText, showMessage, requireLogin, startPage, pageUrl, transport, STATUS, ACTIONS, REASONS };
 })();

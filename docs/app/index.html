@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+  <meta name="description" content="Demonstração do PratoCusto AI: custo real de cada prato no restaurante por quilo.">
+  <meta name="theme-color" content="#E8401F">
+  <title>PratoCusto AI</title>
+  <link rel="icon" type="image/svg+xml" href="static/img/icone.svg">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="static/fonts/PlusJakartaSans.woff2">
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body data-api="/api/v1" data-require-key="false" data-pages="static">
+  
+  <div class="demo-banner" role="note">
+    <span><strong>Demonstração</strong> · roda só no seu navegador, com balança e reconhecimento simulados e dados fictícios.</span>
+    <button type="button" id="demo-reset">Recomeçar a demonstração</button>
+  </div>
+  
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="PratoCusto AI — início">
+      <img src="static/img/icone.svg" alt="">
+      <span class="wordmark"><span class="p">Prato</span>Custo<span class="ai">AI</span></span>
+    </a>
+    <nav aria-label="Páginas">
+      
+      <a href="index.html" aria-current="page">Início</a>
+      
+      <a href="balcao.html">Balcão</a>
+      
+      <a href="camera.html">Câmera</a>
+      
+      <a href="dashboard.html">Painel</a>
+      
+      <a href="https://github.com/LabdoGui/Hackathon-Bovinus/blob/claude/magical-fermat-438tis/docs/endpoints.md">API</a>
+    </nav>
+  </header>
+  <main class="container">
+    
+<section class="hero">
+  <div>
+    <p class="kicker">Restaurante por quilo</p>
+    <h1>O custo real de cada <span class="p">prato</span>, na hora da pesagem.</h1>
+    <p class="lead">Balança, câmera e fichas técnicas no mesmo fluxo: o PratoCusto AI calcula o valor cobrado, o custo alimentar estimado e a margem bruta de cada prato.</p>
+    <div class="actions">
+      <a class="button lg" href="balcao.html">Abrir o balcão</a>
+      <a class="button lg secondary" href="dashboard.html">Ver o painel</a>
+    </div>
+  </div>
+  <img class="hero-mark" src="static/img/icone.svg" alt="">
+</section>
+
+<div class="tiles">
+  <a class="tile" href="balcao.html">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19h16"/><path d="M6 19l1.5-7h9L18 19"/><path d="M12 12V6"/><path d="M8 6h8"/></svg></span>
+    <strong>Balcão</strong><span>Pesa, fotografa, reconhece e registra o prato num clique.</span>
+  </a>
+  <a class="tile" href="camera.html">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span>
+    <strong>Câmera</strong><span>Pré-visualização, captura com pasta numerada e envio manual.</span>
+  </a>
+  <a class="tile" href="dashboard.html">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg></span>
+    <strong>Painel gerencial</strong><span>Valor cobrado, custo, margem, fila de revisão e CSV.</span>
+  </a>
+  <a class="tile" href="https://github.com/LabdoGui/Hackathon-Bovinus/blob/claude/magical-fermat-438tis/docs/endpoints.md">
+    <span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 7l-5 5 5 5"/><path d="M16 7l5 5-5 5"/></svg></span>
+    <strong>API REST</strong><span>Lista de endpoints e documentação no GitHub.</span>
+  </a>
+</div>
+
+<div class="grid-2">
+  <section class="card">
+    <h2>Configuração atual</h2>
+    <div class="chips">
+      <span class="chip">Ambiente <b>demonstração</b></span>
+      <span class="chip">Banco <b>navegador</b></span>
+      <span class="chip">Balança <b>simulada</b></span>
+      <span class="chip">Câmera <b>simulada ou webcam</b></span>
+      <span class="chip">Reconhecimento <b>simulado</b></span>
+    </div>
+    <p class="muted notes">Na versão instalada no restaurante, a balança e a webcam ficam ligadas ao computador do caixa e os dados ficam num banco SQLite local.</p>
+  </section>
+  <section class="card">
+    <h2>Links</h2>
+    <ul class="notes">
+      
+      <li><a href="https://github.com/LabdoGui/Hackathon-Bovinus">Código-fonte no GitHub</a></li>
+      <li><a href="https://github.com/LabdoGui/Hackathon-Bovinus/blob/claude/magical-fermat-438tis/docs/endpoints.md">Endpoints da API</a></li>
+      <li><a href="https://github.com/LabdoGui/Hackathon-Bovinus/blob/claude/magical-fermat-438tis/docs/instalacao-windows.md">Instalação no Windows</a></li>
+      
+    </ul>
+  </section>
+</div>
+
+  </main>
+  <footer class="footer">PratoCusto AI v0.7.0 · custo e margem são estimativas calculadas a partir das fichas técnicas (margem bruta alimentar, não lucro líquido).</footer>
+  <script src="static/js/common.js"></script>
+  
+  <script src="static/js/demo-data.js"></script>
+  <script src="static/js/demo.js"></script>
+  
+  
+</body>
+</html>

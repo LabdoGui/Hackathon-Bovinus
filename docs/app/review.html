@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+  <meta name="description" content="Demonstração do PratoCusto AI: custo real de cada prato no restaurante por quilo.">
+  <meta name="theme-color" content="#E8401F">
+  <title>Revisão · PratoCusto AI</title>
+  <link rel="icon" type="image/svg+xml" href="static/img/icone.svg">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="static/fonts/PlusJakartaSans.woff2">
+  <link rel="stylesheet" href="static/style.css">
+</head>
+<body data-api="/api/v1" data-require-key="false" data-pages="static">
+  
+  <div class="demo-banner" role="note">
+    <span><strong>Demonstração</strong> · roda só no seu navegador, com balança e reconhecimento simulados e dados fictícios.</span>
+    <button type="button" id="demo-reset">Recomeçar a demonstração</button>
+  </div>
+  
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="PratoCusto AI — início">
+      <img src="static/img/icone.svg" alt="">
+      <span class="wordmark"><span class="p">Prato</span>Custo<span class="ai">AI</span></span>
+    </a>
+    <nav aria-label="Páginas">
+      
+      <a href="index.html">Início</a>
+      
+      <a href="balcao.html">Balcão</a>
+      
+      <a href="camera.html">Câmera</a>
+      
+      <a href="dashboard.html">Painel</a>
+      
+      <a href="https://github.com/LabdoGui/Hackathon-Bovinus/blob/claude/magical-fermat-438tis/docs/endpoints.md">API</a>
+    </nav>
+  </header>
+  <main class="container">
+    
+<a class="back" href="dashboard.html">&larr; Painel gerencial</a>
+<div class="page-head">
+  <p class="kicker">Revisão humana</p>
+  <h1>Revisão de transação</h1>
+  <p class="lead">A IA sugere, o operador decide: corrija alimentos, pesos ou proporções. Os valores originais ficam guardados no histórico.</p>
+</div>
+<div id="auth" class="card" hidden></div>
+<p id="page-msg" class="msg info" hidden></p>
+
+<div id="content" hidden>
+  <section id="tx-section" hidden>
+    <div class="card">
+      <div class="card-head"><h2><span id="tx-title"></span> <span id="tx-status"></span></h2></div>
+      <div id="tx-meta" class="metrics"></div>
+      <h3 id="tx-reasons-title">Por que está em revisão</h3>
+      <ul id="tx-reasons" class="notes"></ul>
+    </div>
+
+    <div class="grid-2 wide-left">
+      <div>
+        <div class="card">
+          <h2>Alimentos</h2>
+          <fieldset class="modes">
+            <legend>Editar por</legend>
+            <label><input type="radio" name="mode" id="mode-weight" checked> peso (g)</label>
+            <label><input type="radio" name="mode" id="mode-proportion"> proporção (%)</label>
+          </fieldset>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Alimento</th><th>Quantidade</th><th>Custo</th><th>Reconhecido / original</th><th></th></tr></thead>
+              <tbody id="items-body"></tbody>
+            </table>
+          </div>
+          <p id="totals" class="msg info"></p>
+          <button type="button" id="add-item" class="secondary">Acrescentar alimento</button>
+        </div>
+
+        <div class="card">
+          <h2>Concluir</h2>
+          <p id="readonly-note" class="msg info" hidden></p>
+          <div id="reason-box">
+            <label for="reason">Motivo da revisão (obrigatório, fica no histórico)</label>
+            <textarea id="reason" rows="2" maxlength="500"></textarea>
+            <label for="notes">Observações da transação</label>
+            <textarea id="notes" rows="2" maxlength="2000"></textarea>
+          </div>
+          <div id="actions" class="actions">
+            <button type="button" id="btn-save-confirm">Salvar e confirmar</button>
+            <button type="button" id="btn-save" class="secondary">Salvar correções</button>
+            <button type="button" id="btn-confirm" class="secondary">Confirmar sem alterar</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>Foto do prato</h2>
+          <div id="tx-photo"></div>
+        </div>
+        <div class="card">
+          <h2>Histórico</h2>
+          <ul id="history" class="history"></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+  </main>
+  <footer class="footer">PratoCusto AI v0.7.0 · custo e margem são estimativas calculadas a partir das fichas técnicas (margem bruta alimentar, não lucro líquido).</footer>
+  <script src="static/js/common.js"></script>
+  
+  <script src="static/js/demo-data.js"></script>
+  <script src="static/js/demo.js"></script>
+  
+  <script src="static/js/review.js"></script>
+</body>
+</html>

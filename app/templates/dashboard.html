@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Painel gerencial · {{ app_name }}{% endblock %}
 {% block content %}
-<h1>Painel gerencial</h1>
+<div class="page-head">
+  <p class="kicker">Gestão</p>
+  <h1>Painel gerencial</h1>
+  <p class="lead">Valor cobrado, custo alimentar estimado e margem bruta do período, com a fila de pratos aguardando revisão.</p>
+</div>
 <div id="auth" class="card" hidden></div>
 
 <div id="content" hidden>
@@ -20,26 +24,27 @@
     <ul id="summary-notes" class="notes"></ul>
   </section>
 
-  <section class="card">
+  <section class="card" id="fila">
     <h2>Fila de revisão</h2>
     <div id="queue"></div>
   </section>
 
-  <section class="card">
-    <h2>Valor cobrado por dia</h2>
-    <div id="by-day"></div>
-  </section>
+  <div class="grid-2">
+    <section class="card">
+      <h2>Valor cobrado por dia</h2>
+      <div id="by-day"></div>
+    </section>
+    <section class="card">
+      <h2>Revisões e correções</h2>
+      <div id="review-stats" class="metrics"></div>
+      <ul id="review-reasons" class="notes"></ul>
+      <div id="review-notes"></div>
+    </section>
+  </div>
 
   <section class="card">
     <h2>Por alimento</h2>
     <div id="by-food"></div>
-  </section>
-
-  <section class="card">
-    <h2>Revisões e correções</h2>
-    <div id="review-stats" class="metrics"></div>
-    <ul id="review-reasons" class="notes"></ul>
-    <div id="review-notes"></div>
   </section>
 </div>
 {% endblock %}

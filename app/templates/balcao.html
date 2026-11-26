@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Balcão · {{ app_name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <p class="kicker">Balcão</p>
+  <h1>Registrar prato</h1>
+  <p class="lead">Coloque o prato na balança e clique em registrar: o sistema pesa, fotografa, reconhece os alimentos e calcula valor, custo e margem.</p>
+</div>
+<div id="auth" class="card" hidden></div>
+<div id="content" hidden>
+<div class="grid-2">
+  <section class="card">
+    <div class="card-head"><h2>Prato na balança</h2><span id="rec-badge" class="badge" hidden></span></div>
+    <img id="preview" class="preview" alt="Câmera do balcão">
+    <div class="scale-readout" aria-live="polite">
+      <span id="weight" class="w">—</span><span class="u">g líquido</span><span id="weight-status" class="s"></span>
+    </div>
+    <p id="device-info" class="muted notes">Carregando status da balança e da câmera…</p>
+    <div class="actions">
+      <button type="button" id="read-scale" class="secondary">Ler balança</button>
+      <button type="button" id="toggle-preview" class="secondary">Pausar câmera</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Registrar</h2>
+    <div class="field-row">
+      <label>Preço por kg (R$)
+        <input type="number" id="price" min="0.01" step="0.01" inputmode="decimal" placeholder="padrão do sistema">
+      </label>
+      <label id="sim-box" hidden>Peso simulado (g)
+        <input type="number" id="sim-weight" min="0" step="0.1" inputmode="decimal">
+      </label>
+    </div>
+    <div class="actions">
+      <button type="button" id="register" class="big">Pesar, fotografar e registrar</button>
+    </div>
+    <ol id="steps" class="steps">
+      <li data-step="scale">Ler a balança (peso estável)</li>
+      <li data-step="photo">Fotografar o prato</li>
+      <li data-step="recognition">Reconhecer os alimentos</li>
+      <li data-step="transaction">Calcular e registrar a transação</li>
+    </ol>
+    <p id="page-msg" class="msg info" hidden></p>
+  </section>
+</div>
+
+<section id="result-card" class="card" hidden>
+  <div class="card-head">
+    <h2><span id="r-code"></span> <span id="r-status"></span></h2>
+    <div class="actions">
+      <a id="r-review" class="button" hidden>Revisar agora</a>
+      <button type="button" id="r-new" class="secondary">Próximo prato</button>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div>
+      <div class="total-line"><span id="r-charged" class="big"></span><span id="r-sub" class="muted"></span></div>
+      <div id="r-metrics" class="metrics"></div>
+      <div class="table-wrap">
+        <table class="nums">
+          <thead><tr><th>Alimento</th><th>Peso</th><th>Proporção</th><th>Custo</th><th>Confiança</th></tr></thead>
+          <tbody id="r-items"></tbody>
+        </table>
+      </div>
+      <ul id="r-reasons" class="notes"></ul>
+      <p id="r-notice" class="msg warn" hidden></p>
+    </div>
+    <img id="r-photo" class="preview result-img" alt="Foto do prato registrado">
+  </div>
+</section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', path='js/balcao.js') }}"></script>{% endblock %}
