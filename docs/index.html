@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; base-uri 'self'; form-action 'self'; object-src 'none'">
+  <meta name="description" content="PratoCusto AI: o custo real de cada prato no restaurante por quilo, na hora da pesagem. Balança, câmera, fichas técnicas e margem bruta.">
+  <meta name="theme-color" content="#13202F">
+  <title>PratoCusto AI — o custo real de cada prato</title>
+  <link rel="icon" type="image/svg+xml" href="app/static/img/icone.svg">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="app/static/fonts/PlusJakartaSans.woff2">
+  <link rel="stylesheet" href="app/static/style.css">
+  <link rel="stylesheet" href="assets/landing.css">
+</head>
+<body class="landing">
+  <header class="topbar dark">
+    <a class="brand" href="#inicio" aria-label="PratoCusto AI — início">
+      <img src="app/static/img/icone.svg" alt="">
+      <span class="wordmark"><span class="p">Prato</span>Custo<span class="ai">AI</span></span>
+    </a>
+    <nav aria-label="Seções">
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#tecnologia">Tecnologia</a>
+      <a href="app/index.html">Demonstração</a>
+      <a href="https://github.com/LabdoGui/Hackathon-Bovinus">GitHub</a>
+    </nav>
+  </header>
+
+  <section class="l-hero" id="inicio">
+    <div class="l-wrap l-hero-grid">
+      <div>
+        <p class="kicker">Restaurante por quilo · Hackathon</p>
+        <h1>O custo real de cada <span class="p">prato</span>, na hora da pesagem.</h1>
+        <p class="lead">O PratoCusto AI junta balança, câmera e fichas técnicas num só fluxo: pesa, fotografa, reconhece os alimentos e calcula valor cobrado, custo alimentar estimado e margem bruta de cada prato.</p>
+        <div class="actions">
+          <a class="button lg" href="app/balcao.html">Experimentar a demonstração</a>
+          <a class="button lg ghost" href="https://github.com/LabdoGui/Hackathon-Bovinus">Ver o código no GitHub</a>
+        </div>
+        <p class="l-small">A demonstração roda no seu navegador, com balança e reconhecimento simulados e dados fictícios.</p>
+      </div>
+      
+      <figure class="l-video">
+        <video controls preload="none" playsinline poster="media/pratocusto-poster.jpg">
+          <source src="media/pratocusto.mp4" type="video/mp4">
+        </video>
+        <figcaption>Apresentação em 2 minutos</figcaption>
+      </figure>
+      
+    </div>
+  </section>
+
+  <main>
+    <section class="l-section">
+      <div class="l-wrap l-problem">
+        <div>
+          <p class="kicker">O problema</p>
+          <h2>Você cobra pelo peso. Mas quanto custou o prato?</h2>
+          <p class="lead">No bufê por quilo, todo grama sai pelo mesmo preço, mas cada alimento custa diferente. Sem ligar a pesagem às fichas técnicas, a margem de cada prato fica no escuro.</p>
+        </div>
+        
+        <div class="l-big card">
+          <span class="l-ratio">21×</span>
+          <p><b>1 g de carne de panela</b> custa cerca de 21 vezes <b>1 g de arroz branco</b>.</p>
+          <p class="l-small">R$ 63,14/kg × R$ 2,97/kg, calculados pelo sistema a partir das fichas técnicas de demonstração (valores fictícios). Os dois saem a R$ 59,90/kg no caixa.</p>
+        </div>
+        
+      </div>
+    </section>
+
+    <section class="l-section alt" id="como-funciona">
+      <div class="l-wrap">
+        <p class="kicker">Como funciona</p>
+        <h2>Do balcão ao painel em um clique.</h2>
+        <ol class="l-steps">
+          <li><b>Pesa</b><span>Lê a balança com estabilização, tara e peso mínimo. Funciona com balança serial (protocolo configurável) ou simulador.</span></li>
+          <li><b>Fotografa</b><span>Captura a webcam, confere brilho e nitidez e salva cada foto numa pasta numerada (Prato 0001, 0002…).</span></li>
+          <li><b>Reconhece</b><span>Identifica os alimentos e as proporções. O reconhecimento é plugável; na demonstração ele é simulado.</span></li>
+          <li><b>Calcula</b><span>Distribui o peso entre os alimentos e cruza com as fichas técnicas: valor cobrado, custo alimentar e margem bruta.</span></li>
+          <li><b>Revisa</b><span>Quando há dúvida, o prato vai para a fila: o operador corrige e os valores originais ficam no histórico.</span></li>
+        </ol>
+        <div class="actions"><a class="button lg" href="app/balcao.html">Registrar um prato na demonstração</a></div>
+      </div>
+    </section>
+
+    <section class="l-section">
+      <div class="l-wrap">
+        <p class="kicker">Para quem</p>
+        <h2>Um sistema, três perfis.</h2>
+        <div class="tiles l-tiles">
+          <a class="tile" href="app/balcao.html"><strong>Operador do caixa</strong><span>Registra o prato no balcão e confere o que a IA sugeriu.</span></a>
+          <a class="tile" href="app/dashboard.html"><strong>Gerente</strong><span>Acompanha valor cobrado, custo, margem e a fila de revisão; exporta CSV.</span></a>
+          <a class="tile" href="https://github.com/LabdoGui/Hackathon-Bovinus/blob/claude/magical-fermat-438tis/docs/seguranca.md"><strong>Administrador</strong><span>Cadastra operadores e chaves de acesso, faz backup e restauração do banco.</span></a>
+        </div>
+      </div>
+    </section>
+
+    <section class="l-section dark" id="tecnologia">
+      <div class="l-wrap">
+        <p class="kicker">Tecnologia</p>
+        <h2>Roda no computador do restaurante, sem nuvem obrigatória.</h2>
+        <div class="l-stats">
+          <div><b>59</b><span>endpoints na API REST</span></div>
+          <div><b>11</b><span>tabelas no banco</span></div>
+          <div><b>v0.7.0</b><span>versão atual</span></div>
+        </div>
+        <div class="chips l-chips">
+          <span class="chip">Python 3.12</span><span class="chip">FastAPI</span><span class="chip">SQLAlchemy 2</span><span class="chip">Pydantic 2</span><span class="chip">Alembic</span><span class="chip">SQLite</span><span class="chip">PostgreSQL (opcional)</span><span class="chip">OpenCV</span><span class="chip">PySerial</span><span class="chip">Pytest</span><span class="chip">Docker</span>
+        </div>
+        <ul class="l-list">
+          <li>Chaves de acesso por perfil (operador, gerente, administrador), guardadas como hash.</li>
+          <li>Cada correção fica auditada, com os valores originais preservados.</li>
+          <li>Backup verificado do SQLite, uploads validados, CORS restrito e proteção contra transações duplicadas.</li>
+          <li>Testes automatizados que não dependem de balança nem de webcam física.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="l-section">
+      <div class="l-wrap l-cta card">
+        <div>
+          <h2>Demonstração online e sistema instalado</h2>
+          <p>Este site roda só no navegador: a balança e o reconhecimento são <b>simulados</b>, os dados são <b>fictícios</b> e ficam apenas no seu navegador. No restaurante, o sistema é instalado no computador do caixa (Windows), com a balança na porta serial, a webcam USB e um banco SQLite local.</p>
+        </div>
+        <div class="actions">
+          <a class="button lg" href="app/index.html">Abrir a demonstração</a>
+          <a class="button lg secondary" href="https://github.com/LabdoGui/Hackathon-Bovinus/blob/claude/magical-fermat-438tis/docs/instalacao-windows.md">Como instalar</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">PratoCusto AI v0.7.0 · custo e margem são estimativas a partir das fichas técnicas (margem bruta alimentar, não lucro líquido) · <a href="https://github.com/LabdoGui/Hackathon-Bovinus">código no GitHub</a></footer>
+</body>
+</html>

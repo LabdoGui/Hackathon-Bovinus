@@ -23,6 +23,7 @@ htmlcov/
 tests/
 docs/
 scripts/
+site/
 .vscode/
 .idea/
 Dockerfile

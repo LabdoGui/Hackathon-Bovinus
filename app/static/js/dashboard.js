@@ -4,8 +4,8 @@
   const $ = (id) => document.getElementById(id);
   const msg = $("page-msg");
 
-  function card(label, value, hint) {
-    return el("div", { class: "metric" }, [
+  function card(label, value, hint, extra) {
+    return el("div", { class: "metric" + (extra ? " " + extra : "") }, [
       el("span", { class: "metric-label", text: label }),
       el("strong", { class: "metric-value", text: value }),
       hint ? el("span", { class: "metric-hint", text: hint }) : null,
@@ -27,7 +27,7 @@
     root.appendChild(card("Valor cobrado", fmt.money(s.total_charged_amount), "Ticket médio " + fmt.money(s.average_ticket)));
     root.appendChild(card("Peso líquido", fmt.grams(s.total_net_weight_g), "Média " + fmt.grams(s.average_net_weight_g)));
     root.appendChild(card("Custo alimentar estimado", fmt.money(s.total_food_cost), s.cost_complete_transactions + " transação(ões) com custo completo"));
-    root.appendChild(card("Margem bruta alimentar estimada", fmt.money(s.total_gross_margin), fmt.pct(s.gross_margin_pct) + " sobre o valor com custo conhecido"));
+    root.appendChild(card("Margem bruta alimentar estimada", fmt.money(s.total_gross_margin), fmt.pct(s.gross_margin_pct) + " sobre o valor com custo conhecido", "accent"));
     root.appendChild(card("Em revisão", String(s.transactions_pending_review), fmt.money(s.pending_review_charged_amount) + " fora dos totais"));
     const notes = clear($("summary-notes"));
     s.notes.forEach((n) => notes.appendChild(el("li", { text: n })));
@@ -62,6 +62,20 @@
       rect.appendChild(title);
       svg.appendChild(rect);
     });
+    const line = document.createElementNS(svgNS, "line");
+    line.setAttribute("class", "base");
+    [["x1", pad], ["x2", W - pad], ["y1", H - pad + 0.5], ["y2", H - pad + 0.5]].forEach(([k, v]) => line.setAttribute(k, String(v)));
+    svg.appendChild(line);
+    [[0, "start"], [days.length - 1, "end"]].forEach(([i, anchor]) => {
+      if (!days[i]) return;
+      const label = document.createElementNS(svgNS, "text");
+      label.setAttribute("class", "axis");
+      label.setAttribute("x", String(anchor === "start" ? pad : W - pad));
+      label.setAttribute("y", String(H - 6));
+      label.setAttribute("text-anchor", anchor);
+      label.textContent = fmt.day(days[i].date);
+      svg.appendChild(label);
+    });
     root.appendChild(svg);
     root.appendChild(el("p", { class: "muted", text: "Valor cobrado por dia (máximo " + fmt.money(max) + "). Passe o mouse sobre as barras." }));
     root.appendChild(el("details", {}, [
@@ -94,7 +108,7 @@
     const rows = page.items.map((t) => [
       td(t.code), td(fmt.dateTime(t.created_at)), td(fmt.money(t.charged_amount)),
       el("td", {}, el("ul", { class: "reasons" }, t.review_reasons.map((r) => el("li", { text: reasonText(r) })))),
-      el("td", {}, el("a", { class: "button", href: "/review?id=" + encodeURIComponent(t.id), text: "Revisar" })),
+      el("td", {}, el("a", { class: "button", href: window.PC.pageUrl("review", { id: t.id }), text: "Revisar" })),
     ]);
     const root = clear($("queue"));
     root.appendChild(table(["Código", "Data", "Valor", "Motivos", ""], rows, "Nenhuma transação aguardando revisão."));

@@ -38,6 +38,11 @@ PAGE_CSP = (
 )
 logger = logging.getLogger("app")
 
+
+def server_page_url(name: str) -> str:
+    """Endereço de uma página própria no servidor (a versão estática usa ``nome.html``)."""
+    return "/" if name == "index" else f"/{name}"
+
 DESCRIPTION = """
 API local do **PratoCusto AI**: integra balança, webcam, reconhecimento de alimentos,
 motor de cálculo de custos, banco de dados e painel gerencial.
@@ -181,6 +186,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "version": __version__,
                 "settings": settings,
                 "api_prefix": API_PREFIX,
+                "active": template.removesuffix(".html"),
+                "page_url": server_page_url,
+                "docs_url": "/docs",
+                "demo": False,
             },
             headers={"Content-Security-Policy": PAGE_CSP, "Cache-Control": "no-store"},
         )
@@ -188,6 +197,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/", response_class=HTMLResponse, include_in_schema=False)
     def index(request: Request):
         return page(request, "index.html")
+
+    @app.get("/balcao", response_class=HTMLResponse, include_in_schema=False)
+    def counter_page(request: Request):
+        return page(request, "balcao.html")
 
     @app.get("/camera", response_class=HTMLResponse, include_in_schema=False)
     def camera_page(request: Request):

@@ -3,23 +3,42 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% if demo %}<meta http-equiv="Content-Security-Policy" content="{{ demo_csp }}">
+  <meta name="description" content="Demonstração do PratoCusto AI: custo real de cada prato no restaurante por quilo.">
+  {% endif %}<meta name="theme-color" content="#E8401F">
   <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='img/icone.svg') }}">
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ url_for('static', path='fonts/PlusJakartaSans.woff2') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
 </head>
-<body data-api="{{ api_prefix }}" data-require-key="{{ 'true' if settings.api_require_key else 'false' }}">
+<body data-api="{{ api_prefix }}" data-require-key="{{ 'true' if settings.api_require_key else 'false' }}" data-pages="{{ 'static' if demo else 'server' }}">
+  {% if demo %}
+  <div class="demo-banner" role="note">
+    <span><strong>Demonstração</strong> · roda só no seu navegador, com balança e reconhecimento simulados e dados fictícios.</span>
+    <button type="button" id="demo-reset">Recomeçar a demonstração</button>
+  </div>
+  {% endif %}
   <header class="topbar">
-    <strong>{{ app_name }}</strong>
-    <span class="muted">v{{ version }}</span>
-    <nav>
-      <a href="/dashboard">Painel</a>
-      <a href="/camera">Câmera</a>
-      <a href="/docs">API</a>
+    <a class="brand" href="{{ page_url('index') }}" aria-label="{{ app_name }} — início">
+      <img src="{{ url_for('static', path='img/icone.svg') }}" alt="">
+      <span class="wordmark"><span class="p">Prato</span>Custo<span class="ai">AI</span></span>
+    </a>
+    <nav aria-label="Páginas">
+      {% for key, label in [("index", "Início"), ("balcao", "Balcão"), ("camera", "Câmera"), ("dashboard", "Painel")] %}
+      <a href="{{ page_url(key) }}"{% if active == key %} aria-current="page"{% endif %}>{{ label }}</a>
+      {% endfor %}
+      <a href="{{ docs_url }}">API</a>
     </nav>
   </header>
   <main class="container">
     {% block content %}{% endblock %}
   </main>
+  <footer class="footer">{{ app_name }} v{{ version }} · custo e margem são estimativas calculadas a partir das fichas técnicas (margem bruta alimentar, não lucro líquido).</footer>
   <script src="{{ url_for('static', path='js/common.js') }}"></script>
+  {% if demo %}
+  <script src="{{ url_for('static', path='js/demo-data.js') }}"></script>
+  <script src="{{ url_for('static', path='js/demo.js') }}"></script>
+  {% endif %}
   {% block scripts %}{% endblock %}
 </body>
 </html>

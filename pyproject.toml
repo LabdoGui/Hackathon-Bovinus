@@ -1,6 +1,6 @@
 [project]
 name = "pratocusto-ai"
-version = "0.6.0"
+version = "0.7.0"
 description = "PratoCusto AI - backend local para pesagem, captura, reconhecimento e custo de pratos"
 requires-python = ">=3.12"
 
