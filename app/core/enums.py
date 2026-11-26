@@ -30,6 +30,7 @@ class RecognitionMode(StrEnum):
     MOCK = "mock"
     API = "api"
     LOCAL = "local"
+    CLAUDE = "claude"  # visão do Claude (API da Anthropic)
 
 
 class OperatorRole(StrEnum):

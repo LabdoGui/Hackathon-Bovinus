@@ -13,6 +13,7 @@ from app.services.recognition.base import (
     RecognitionOutput,
     RecognitionUnavailable,
 )
+from app.services.recognition.claude_client import ClaudeFoodRecognitionService
 from app.services.recognition.local import LocalFoodRecognitionService
 from app.services.recognition.mock import MockFoodRecognitionService
 
@@ -21,6 +22,8 @@ def build_recognition_service(settings: Settings) -> FoodRecognitionService:
     mode = RecognitionMode(settings.recognition_mode)
     if mode is RecognitionMode.API:
         return ApiFoodRecognitionService(settings)
+    if mode is RecognitionMode.CLAUDE:
+        return ClaudeFoodRecognitionService(settings)
     if mode is RecognitionMode.LOCAL:
         return LocalFoodRecognitionService(settings.recognition_local_model_path)
     return MockFoodRecognitionService(settings.recognition_mock_scenario)
@@ -28,6 +31,7 @@ def build_recognition_service(settings: Settings) -> FoodRecognitionService:
 
 __all__ = [
     "ApiFoodRecognitionService",
+    "ClaudeFoodRecognitionService",
     "Detection",
     "FoodRecognitionService",
     "Interpretation",

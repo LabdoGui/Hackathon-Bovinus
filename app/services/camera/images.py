@@ -5,7 +5,7 @@ import os
 import re
 import threading
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, tzinfo
 from pathlib import Path
 
 import cv2
@@ -88,51 +88,70 @@ class ImageStore:
 
 
 class PlateExporter:
-    """Copia cada imagem para ``<raiz>/Prato 0001/Prato 0001.jpg`` (numeração sequencial).
+    """Copia cada imagem para ``<raiz>/AAAA-MM/AAAA-MM-DD/Prato 0001.jpg``.
 
-    O próximo número é o maior já existente na pasta + 1, então continua certo depois de reiniciar
-    o sistema e nunca sobrescreve um prato existente (a pasta é criada de forma exclusiva).
+    Uma pasta por mês, dentro dela uma pasta por dia e, dentro do dia, as fotos numeradas em
+    sequência (a numeração recomeça em 0001 a cada dia). O próximo número é o maior já existente
+    na pasta do dia + 1, então continua certo depois de reiniciar o sistema e nunca sobrescreve
+    uma foto existente (o arquivo é criado de forma exclusiva).
     """
 
     _lock = threading.Lock()
 
-    def __init__(self, root: Path, prefix: str = "Prato") -> None:
+    def __init__(self, root: Path, prefix: str = "Prato", tz: tzinfo | None = None) -> None:
         self.root = root
         self.prefix = prefix
-        self._pattern = re.compile(rf"^{re.escape(prefix)} (\d+)$")
+        self.tz = tz or UTC
+        self._pattern = re.compile(rf"^{re.escape(prefix)} (\d+)\.jpg$")
 
-    def _next_number(self) -> int:
-        numbers = [int(m.group(1)) for p in self.root.iterdir() if p.is_dir() and (m := self._pattern.match(p.name))]
+    def day_folder(self, now: datetime | None = None) -> Path:
+        moment = (now or datetime.now(self.tz)).astimezone(self.tz)
+        return self.root / f"{moment:%Y-%m}" / f"{moment:%Y-%m-%d}"
+
+    def _next_number(self, folder: Path) -> int:
+        numbers = [int(m.group(1)) for p in folder.iterdir() if p.is_file() and (m := self._pattern.match(p.name))]
         return max(numbers, default=0) + 1
 
-    def export(self, jpeg: bytes) -> tuple[str, Path]:
+    def export(self, jpeg: bytes, *, now: datetime | None = None) -> tuple[str, Path]:
         with self._lock:
-            self.root.mkdir(parents=True, exist_ok=True)
-            number = self._next_number()
-            for _ in range(1000):
-                label = f"{self.prefix} {number:04d}"
-                folder = self.root / label
-                try:
-                    folder.mkdir()
-                except FileExistsError:
-                    number += 1
-                    continue
-                target = folder / f"{label}.jpg"
-                temporary = target.with_suffix(".tmp")
-                try:
-                    temporary.write_bytes(jpeg)
-                    os.replace(temporary, target)
-                except OSError:
-                    temporary.unlink(missing_ok=True)
-                    folder.rmdir()
-                    raise
-                return label, target
-        raise OSError("não foi possível reservar um número de prato")
+            folder = self.day_folder(now)
+            folder.mkdir(parents=True, exist_ok=True)
+            number = self._next_number(folder)
+            try:
+                for _ in range(1000):
+                    label = f"{self.prefix} {number:04d}"
+                    target = folder / f"{label}.jpg"
+                    try:
+                        descriptor = os.open(target, os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0))
+                    except FileExistsError:
+                        number += 1
+                        continue
+                    try:
+                        with os.fdopen(descriptor, "wb") as handle:
+                            handle.write(jpeg)
+                    except OSError:
+                        target.unlink(missing_ok=True)
+                        raise
+                    return label, target
+                raise OSError("não foi possível reservar um número de prato")
+            except OSError:
+                self._prune(folder)
+                raise
+
+    def _prune(self, folder: Path) -> None:
+        """Remove a pasta do dia e a do mês se ficaram vazias (nunca a raiz)."""
+        for candidate in (folder, folder.parent):
+            if candidate == self.root:
+                break
+            try:
+                candidate.rmdir()
+            except OSError:
+                break
 
     def remove(self, path: Path) -> None:
-        """Desfaz uma cópia (somente o arquivo e a pasta do prato, se ficar vazia)."""
+        """Desfaz uma cópia (somente o arquivo; as pastas do dia e do mês saem se ficarem vazias)."""
         try:
             path.unlink(missing_ok=True)
-            path.parent.rmdir()
         except OSError:
-            pass
+            return
+        self._prune(path.parent)

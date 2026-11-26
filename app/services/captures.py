@@ -33,7 +33,7 @@ class CaptureService:
         self.thresholds = QualityThresholds.from_settings(settings)
         self.store = ImageStore(settings.images_dir)
         self.exporter = (
-            PlateExporter(settings.capture_export_dir, settings.capture_export_prefix)
+            PlateExporter(settings.capture_export_dir, settings.capture_export_prefix, settings.tzinfo)
             if settings.capture_export_enabled
             else None
         )

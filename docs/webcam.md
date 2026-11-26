@@ -44,25 +44,34 @@ continua funcionando em qualquer modo.
 
 ## Pasta dos pratos (cópia automática)
 
-A cada **Capturar imagem** (e a cada imagem enviada) o sistema cria sozinho uma pasta numerada e
-copia a foto para dentro dela:
+A cada **Capturar imagem** (e a cada imagem enviada) o sistema copia a foto sozinho para a pasta do
+mês e, dentro dela, para a pasta do dia, com o nome numerado em sequência:
 
 ```
 Pratos\
-  Prato 0001\Prato 0001.jpg
-  Prato 0002\Prato 0002.jpg
-  ...
+  2026-11\
+    2026-11-26\
+      Prato 0001.jpg
+      Prato 0002.jpg
+    2026-11-27\
+      Prato 0001.jpg
+  2026-12\
+    2026-12-01\
+      Prato 0001.jpg
 ```
+
+* As pastas de mês e dia são criadas sozinhas, no fuso `APP_TIMEZONE` (padrão `America/Sao_Paulo`).
+* A numeração recomeça em `0001` a cada dia.
 
 * Escolha a pasta no `.env`: `CAPTURE_EXPORT_DIR=C:/PrecoCusto/Pratos` (barras normais ou
   invertidas; caminho relativo = dentro da pasta do projeto). Reinicie o sistema depois de mudar.
 * O prefixo é `CAPTURE_EXPORT_PREFIX=Prato`; `CAPTURE_EXPORT_ENABLED=false` desliga a cópia.
-* A numeração continua certa depois de reiniciar (usa o maior número que já existe na pasta) e
-  nunca sobrescreve um prato. Se você apagar a pasta do último prato, o número dele é reutilizado.
+* A numeração continua certa depois de reiniciar (usa o maior número que já existe na pasta do dia)
+  e nunca sobrescreve uma foto. Se você apagar a última foto do dia, o número dela é reutilizado.
 * A tela `/camera` mostra "Salvo como Prato 0001 em ..." com o caminho completo.
 * O sistema **também** guarda a imagem original em `data/images` (é a que alimenta o reconhecimento
-  e as telas de revisão); a pasta dos pratos é uma cópia para você. Apagar uma pasta de prato não
-  afeta o sistema.
+  e as telas de revisão); a pasta dos pratos é uma cópia para você. Apagar fotos ou pastas de
+  mês/dia ali não afeta o sistema.
 * Se a pasta não puder ser gravada (disco cheio, sem permissão, caminho inexistente em outro
   disco), a captura **não é perdida**: continua em `data/images` e a tela avisa que a cópia falhou.
 

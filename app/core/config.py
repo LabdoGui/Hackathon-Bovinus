@@ -127,7 +127,7 @@ class Settings(BaseSettings):
     camera_blur_threshold: float = Field(default=100.0, ge=0)
     camera_empty_stddev_threshold: float = Field(default=4.0, ge=0, le=128)
 
-    # Cópia automática de cada captura em "<pasta>/Prato 0001/Prato 0001.jpg", "Prato 0002/..."
+    # Cópia automática de cada captura em "<pasta>/AAAA-MM/AAAA-MM-DD/Prato 0001.jpg", "Prato 0002.jpg"...
     capture_export_enabled: bool = True
     capture_export_dir: Path = Path("Pratos")
     capture_export_prefix: str = Field(default="Prato", min_length=1, max_length=30, pattern=r"^[A-Za-z0-9 _\-]+$")
@@ -146,6 +146,11 @@ class Settings(BaseSettings):
     recognition_api_auth_scheme: str = "Bearer"
     recognition_api_timeout_s: float = Field(default=15.0, gt=0, le=120)
     recognition_api_max_response_kb: int = Field(default=512, ge=4, le=8192)
+    # Claude (RECOGNITION_MODE=claude). A chave é a mesma variável do SDK: ANTHROPIC_API_KEY.
+    anthropic_api_key: SecretStr | None = None
+    recognition_claude_model: str = Field(default="claude-opus-5-5", min_length=1, max_length=80)
+    recognition_claude_effort: Literal["low", "medium", "high"] = "medium"
+    recognition_claude_timeout_s: float = Field(default=60.0, gt=0, le=300)
     # Modelo local (estrutura preparada; nenhum modelo é fornecido)
     recognition_local_model_path: Path | None = None
 
@@ -270,7 +275,9 @@ class Settings(BaseSettings):
                 raise ValueError(f"SCALE_SERIAL_STABLE_REGEX inválida: {exc}") from exc
         return value
 
-    @field_validator("recognition_api_url", "recognition_api_key", "recognition_local_model_path", mode="before")
+    @field_validator(
+        "recognition_api_url", "recognition_api_key", "anthropic_api_key", "recognition_local_model_path", mode="before"
+    )
     @classmethod
     def _blank_is_none(cls, value: object) -> object:
         return None if isinstance(value, str) and not value.strip() else value
