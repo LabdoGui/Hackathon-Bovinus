@@ -45,14 +45,32 @@ SYSTEM_PROMPT = (
     "`recognition_class` curto em minúsculas, sem acentos e com sublinhado (ex.: farofa_de_ovo) e "
     "escreva o nome em português em `name`. `confidence` é de 0 a 1: sua certeza de que o alimento "
     "está no prato e foi identificado corretamente (use valores baixos quando estiver em dúvida). "
-    "`proportion` é a fração aproximada da comida do prato (por área visível) ocupada por esse "
-    "alimento; as proporções devem somar 1. Se não houver comida identificável na imagem, "
-    "devolva a lista vazia. Não invente alimentos que você não consegue ver."
+    "`proportion` é a fração do VOLUME/PESO da comida do prato que cada alimento representa "
+    "(não a área que ele ocupa vista de cima); as proporções devem somar 1. "
+    "Pense em 3D, como alguém que sabe como o prato foi montado: "
+    "(1) A foto de cima engana. Molhos, caldos, queijo gratinado, cremes e coberturas formam só uma "
+    "camada fina e escondem o que está embaixo. Se há formato de massa, grãos ou pedaços aparecendo "
+    "sob o molho, ou o monte está alto, estime o alimento de base por baixo e NÃO deixe o molho "
+    "dominar a proporção só porque cobre mais área. Exemplo: macarrão com molho branco é, em "
+    "volume, quase todo macarrão, com o molho como uma fração pequena. "
+    "(2) Considere a profundidade: montes altos (arroz, purê, macarrão enrolado) pesam muito mais "
+    "que camadas finas espalhadas (folhas, salada, farofa); avalie a altura pelas sombras e pelo "
+    "relevo. Prato fundo (sopa, feijoada, caldo) tem muito líquido; num prato raso o líquido é pouco. "
+    "(3) Estime a profundidade e a espessura pelo tamanho do prato e das bordas; não confunda a "
+    "borda do prato com comida. "
+    "(4) Só considere um alimento escondido se houver pistas visíveis (formato, volume, "
+    "transparência do molho); sem pista nenhuma, não invente. Quanto mais incerta a parte escondida, "
+    "mais baixa a `confidence`. "
+    "Antes da lista, descreva em `analysis` (2 a 4 frases, em português) o tipo de prato (raso ou "
+    "fundo), as camadas (o que está por cima de quê) e como você estimou o volume de cada alimento. "
+    "Se não houver comida identificável na imagem, devolva a lista vazia. "
+    "Não invente alimentos sem nenhuma evidência na imagem."
 )
 
 RESPONSE_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {
+        "analysis": {"type": "string"},
         "detections": {
             "type": "array",
             "items": {
@@ -68,7 +86,7 @@ RESPONSE_SCHEMA: dict[str, Any] = {
             },
         }
     },
-    "required": ["detections"],
+    "required": ["analysis", "detections"],
     "additionalProperties": False,
 }
 
@@ -183,7 +201,11 @@ class ClaudeFoodRecognitionService(FoodRecognitionService):
             )
         text = next((b.text for b in response.content if b.type == "text"), "")
         try:
-            parsed = _ApiResponse.model_validate(json.loads(text))
+            payload = json.loads(text)
+            parsed = _ApiResponse.model_validate(payload)
+            analysis = payload.get("analysis") if isinstance(payload, dict) else None
+            if isinstance(analysis, str) and analysis.strip():
+                logger.info("Análise do prato pelo Claude: %s", analysis.strip()[:1000])
         except (ValueError, ValidationError) as exc:
             raise RecognitionUnavailable(
                 "Resposta do Claude fora do formato esperado.", code="recognition_bad_response"
