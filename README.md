@@ -7,8 +7,12 @@ self-service. Roda em um notebook ou mini-PC **Windows** (sem Raspberry Pi).
 **Demonstração online:** https://labdogui.github.io/Hackathon-Bovinus/ — roda no navegador, com
 balança e reconhecimento simulados e dados fictícios (como ativar: [docs/github-pages.md](docs/github-pages.md)).
 
-**Vídeo de demonstração:** [docs/media/pratocusto.mp4](docs/media/pratocusto.mp4) — o sistema em uso: registro do
-prato, revisão humana, painel e exportação para planilha, em 2 minutos (também na página inicial do site).
+### Vídeo de demonstração
+
+[![Assistir à demonstração do PratoCusto (2 minutos)](docs/media/pratocusto-video-capa.jpg)](https://labdogui.github.io/Hackathon-Bovinus/media/pratocusto.mp4)
+
+O sistema em uso: registro do prato, revisão humana, painel e exportação para planilha, em 2 minutos. Clique na
+imagem para assistir ou [baixe o MP4](docs/media/pratocusto.mp4) (o vídeo também está na página inicial do site).
 
 **Documentos do projeto:**
 
