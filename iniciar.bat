@@ -1,0 +1,4 @@
+@echo off
+rem Inicia o PratoCusto AI (duplo clique). O bypass vale apenas para este script.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\iniciar.ps1"
+if errorlevel 1 pause

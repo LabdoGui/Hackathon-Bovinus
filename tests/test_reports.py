@@ -7,7 +7,7 @@ from decimal import Decimal as D
 import pytest
 
 from app.core.enums import ItemSource, TransactionStatus
-from app.models import Food, Transaction, TransactionItem
+from app.models import Transaction, TransactionItem
 
 
 def _utc(*args) -> datetime:

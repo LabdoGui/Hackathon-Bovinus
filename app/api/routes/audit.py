@@ -1,7 +1,6 @@
-import uuid
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Query, Request
+from fastapi import APIRouter, Query
 
 from app.api.deps import Limit, ManagerOperator, Offset, SessionDep
 from app.core.enums import AuditAction

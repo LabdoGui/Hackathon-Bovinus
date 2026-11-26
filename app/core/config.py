@@ -149,6 +149,18 @@ class Settings(BaseSettings):
         default_factory=lambda: ["http://localhost:8000", "http://127.0.0.1:8000"]
     )
     max_upload_mb: int = Field(default=5, ge=1, le=50)
+    # Cabeçalhos Host aceitos (sem porta). Protege contra DNS rebinding. Ao acessar por IP/nome da
+    # rede (ex.: 192.168.0.10), inclua-o aqui.
+    allowed_hosts: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["localhost", "127.0.0.1"])
+    # Exige chave de API também nas consultas (GET) e na câmera; só /health fica público.
+    api_require_key: bool = False
+    # Limite de tentativas com chave inválida por endereço de origem
+    auth_max_failures: int = Field(default=10, ge=1, le=1000)
+    auth_window_s: int = Field(default=300, ge=10, le=86400)
+
+    # Backup (SQLite)
+    backup_keep: int = Field(default=14, ge=1, le=1000)
+    backup_interval_hours: float = Field(default=0, ge=0, le=720)  # 0 = desligado
 
     # Relatórios e revisão
     app_timezone: str = "America/Sao_Paulo"
@@ -171,6 +183,25 @@ class Settings(BaseSettings):
     def _split_origins(cls, value: object) -> object:
         if isinstance(value, str):
             return [item.strip() for item in value.split(",") if item.strip()]
+        return value
+
+    @field_validator("allowed_hosts", mode="before")
+    @classmethod
+    def _split_hosts(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [item.strip().lower() for item in value.split(",") if item.strip()]
+        return value
+
+    @field_validator("allowed_hosts")
+    @classmethod
+    def _validate_hosts(cls, value: list[str]) -> list[str]:
+        if not value:
+            raise ValueError("ALLOWED_HOSTS não pode ser vazio.")
+        for host in value:
+            if host == "*" or "/" in host or ":" in host.replace("[::1]", ""):
+                raise ValueError(
+                    f"ALLOWED_HOSTS inválido: {host!r}. Informe só nomes/IPs, sem porta, esquema ou curinga '*'."
+                )
         return value
 
     @field_validator("cors_origins")
@@ -287,6 +318,10 @@ class Settings(BaseSettings):
     @property
     def images_dir(self) -> Path:
         return self.data_dir / "images"
+
+    @property
+    def is_loopback_only(self) -> bool:
+        return self.host in {"127.0.0.1", "localhost", "::1"}
 
     @property
     def backup_dir(self) -> Path:

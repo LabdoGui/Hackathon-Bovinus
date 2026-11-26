@@ -1,0 +1,35 @@
+# Sobreposição para usar PostgreSQL em vez de SQLite:
+#   docker compose -f docker-compose.yml -f docker-compose.postgres.yml up --build
+#
+# Defina POSTGRES_PASSWORD no .env (obrigatório; não há senha padrão).
+services:
+  app:
+    environment:
+      DATABASE_MODE: postgresql
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-pratocusto}
+      POSTGRES_USER: ${POSTGRES_USER:-pratocusto}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pratocusto}
+      POSTGRES_USER: ${POSTGRES_USER:-pratocusto}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no .env}
+    volumes:
+      - pratocusto-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Sem "ports": o banco só é acessível pela rede interna do compose.
+
+volumes:
+  pratocusto-pgdata:

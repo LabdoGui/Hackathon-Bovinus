@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import uuid
+
 from sqlalchemy import select
 
 from app.models import Operator
@@ -17,3 +19,15 @@ class OperatorRepository(Repository[Operator]):
 
     def list(self, *, limit: int, offset: int) -> tuple[list[Operator], int]:
         return self.paginate(select(Operator), limit=limit, offset=offset, order_by=[Operator.username])
+
+    def count_active_admins(self, *, excluding: uuid.UUID | None = None) -> int:
+        from sqlalchemy import func
+
+        from app.core.enums import OperatorRole
+
+        statement = select(func.count()).select_from(Operator).where(
+            Operator.role == OperatorRole.ADMIN, Operator.active.is_(True)
+        )
+        if excluding is not None:
+            statement = statement.where(Operator.id != excluding)
+        return self.session.scalar(statement) or 0

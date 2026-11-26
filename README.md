@@ -2,65 +2,70 @@
 
 API REST local que conecta **balança**, **webcam USB**, **reconhecimento de alimentos**,
 **motor de cálculo de custos**, **banco de dados** e **painel gerencial** de um restaurante
-self-service. Projetada para rodar em um notebook ou mini-PC **Windows** (sem Raspberry Pi).
+self-service. Roda em um notebook ou mini-PC **Windows** (sem Raspberry Pi).
 
-> **Importante:** o reconhecimento de alimentos começa em modo *mock* (simulado). Não existe
-> modelo treinado neste projeto até que um seja integrado. Os dados de demonstração (seed)
-> são **fictícios** e estão marcados com `is_demo=true` e o sufixo "(demo)".
+> ## Leia antes de usar em produção
+>
+> * **Não existe modelo de reconhecimento de alimentos treinado neste projeto.** O modo padrão
+>   (`RECOGNITION_MODE=mock`) é uma **simulação**: os alimentos "reconhecidos" não refletem a
+>   imagem, e as transações originadas dele vão para revisão humana. Para reconhecimento real é
+>   preciso integrar uma API externa (contrato em [docs/reconhecimento.md](docs/reconhecimento.md))
+>   ou um modelo local (apenas a estrutura existe).
+> * Os dados do `seed` são **fictícios** (`is_demo=true`, sufixo "(demo)").
+> * **Webcam física, balança real, Docker e os scripts do Windows não puderam ser testados** no
+>   ambiente de desenvolvimento (Linux, sem hardware, sem daemon do Docker). O que foi testado:
+>   toda a lógica com equipamentos simulados/falsos, a API, o painel em navegador (Chromium) e os
+>   arquivos de empacotamento de forma estática. Veja [Limitações](#limitações-conhecidas).
+> * "Margem" no sistema é a **margem bruta alimentar estimada** (valor cobrado − custo alimentar
+>   estimado pelas fichas técnicas). **Não é lucro líquido.**
 
-## Status por fase
+## Status
 
 | Fase | Escopo | Status |
 |------|--------|--------|
-| 1 | Estrutura, configurações, banco de dados e API básica | ✅ Concluída |
-| 2 | Simulador de balança e motor de cálculo | ✅ Concluída |
-| 3 | Webcam e captura | ✅ Concluída |
-| 4 | Reconhecimento mock e interface abstrata de IA | ✅ Concluída |
-| 5 | Revisão humana, histórico e relatórios | ✅ Concluída |
-| 6 | Testes, segurança, documentação e empacotamento | ⏳ Aguardando autorização |
+| 1 | Estrutura, configurações, banco de dados e API básica | ✅ |
+| 2 | Simulador de balança e motor de cálculo | ✅ |
+| 3 | Webcam e captura | ✅ (webcam física não testada) |
+| 4 | Reconhecimento mock e interface abstrata de IA | ✅ (sem modelo real) |
+| 5 | Revisão humana, histórico e relatórios | ✅ |
+| 6 | Testes, segurança, documentação e empacotamento | ✅ |
 
-Detalhes de cada fase em [`docs/fases/`](docs/fases/).
+Relatório de cada fase em [docs/fases/](docs/fases/). **407 testes**, cobertura de código 98%.
 
-## Tecnologias
+## Começando
 
-Python 3.12 · FastAPI · SQLAlchemy 2 · Pydantic 2 (+ pydantic-settings) · Alembic · SQLite
-(PostgreSQL opcional) · OpenCV · PySerial · Uvicorn · Jinja2 · Pytest · HTTPX · Pillow ·
-python-multipart.
+### Windows (recomendado)
 
-## Instalação no Windows (PowerShell)
-
-Pré-requisitos: [Python 3.12](https://www.python.org/downloads/) (marque *Add python.exe to PATH*)
-e [Git](https://git-scm.com/download/win).
+Requisitos: Python 3.12 e Git. Passo a passo completo em
+[docs/instalacao-windows.md](docs/instalacao-windows.md).
 
 ```powershell
 git clone -b claude/magical-fermat-438tis https://github.com/LabdoGui/Hackathon-Bovinus.git
 cd Hackathon-Bovinus
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-Copy-Item .env.example .env
+.\instalar.bat -Demo
+.venv\Scripts\python.exe -m app.cli create-operator --name "Administrador" --username admin --role admin
+.\iniciar.bat
 ```
 
-Se o PowerShell bloquear a ativação do ambiente virtual, execute uma vez:
-`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`.
+Abra **http://127.0.0.1:8000/dashboard** e entre com a chave que o `create-operator` mostrou
+(aparece uma única vez).
 
-```powershell
-python -m app.cli seed                                                # dados fictícios (opcional)
-python -m app.cli create-operator --name "Administrador" --username admin --role admin
-python -m app                                                         # inicia em http://127.0.0.1:8000
+### Docker
+
+```bash
+docker compose up --build
+docker compose exec app python -m app.cli create-operator --name Admin --username admin --role admin
 ```
 
-O comando `create-operator` mostra a **chave de API uma única vez** — guarde-a. Ela é usada no
-cabeçalho `X-API-Key` (botão **Authorize** em `/docs`) para operações administrativas.
+Detalhes (PostgreSQL, Linux com dispositivos, limitações no Windows): [docs/docker.md](docs/docker.md).
 
-## Instalação no Linux/macOS
+### Linux/macOS (desenvolvimento)
 
 ```bash
 python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-python -m app.cli seed
+python -m app.cli seed && python -m app.cli create-operator --name Admin --username admin --role admin
 python -m app
 ```
 
@@ -68,41 +73,39 @@ python -m app
 
 | URL | Descrição |
 |-----|-----------|
-| http://127.0.0.1:8000/ | Página inicial (status da configuração) |
-| http://127.0.0.1:8000/docs | Documentação interativa (Swagger/OpenAPI) |
-| http://127.0.0.1:8000/redoc | Documentação ReDoc |
-| http://127.0.0.1:8000/api/v1/health | Saúde da API |
-| http://127.0.0.1:8000/dashboard | Painel gerencial (chave de gerente/admin) |
-| http://127.0.0.1:8000/review?id=… | Revisão de uma transação (chave de operador) |
-| http://127.0.0.1:8000/camera | Teste da webcam (pré-visualização, captura, upload) |
+| `/dashboard` | Painel gerencial (chave de gerente/admin) |
+| `/review?id=…` | Revisão de uma transação (chave de operador) |
+| `/camera` | Teste da webcam (pré-visualização, captura, upload) |
+| `/docs`, `/redoc` | Documentação interativa da API (OpenAPI) |
+| `/api/v1/health` | Saúde da API |
+
+## Como funciona (fluxo do dia a dia)
+
+1. **Balança** → `POST /api/v1/scale/readings` (peso estável, tara, peso mínimo).
+2. **Câmera** → `POST /api/v1/camera/captures` (ou `/uploads`) → valida a imagem.
+3. **Reconhecimento** → `POST /api/v1/recognition/analyze` → alimentos, confianças, proporções e pesos.
+4. **Transação** → `POST /api/v1/transactions/from-recognition` (ou `/transactions`, informando os
+   alimentos): peso líquido, distribuição, custo, valor cobrado e margem bruta alimentar estimada.
+   Incerteza, alimento fora do cadastro, custo desconhecido ou resultado simulado → `pending_review`.
+5. **Revisão humana** → `/review` ou `POST /transactions/{id}/review`: o operador corrige
+   alimentos, proporções e pesos; os **valores originais** e todo o histórico ficam registrados.
+6. **Gestão** → `/dashboard`, `/api/v1/reports/*` e exportação CSV.
 
 ## Configuração
 
-Todas as configurações vêm de variáveis de ambiente (ou do arquivo `.env`). Veja
-[`.env.example`](.env.example). Principais:
+Tudo vem de variáveis de ambiente (ou `.env`). Modelo comentado em [`.env.example`](.env.example).
+Valores iniciais exigidos: `SCALE_MODE=mock`, `CAMERA_MODE=webcam`, `RECOGNITION_MODE=mock`,
+`DATABASE_MODE=sqlite`.
 
-| Variável | Valores | Padrão |
-|----------|---------|--------|
-| `SCALE_MODE` | `mock`, `serial`, `manual` | `mock` |
-| `CAMERA_MODE` | `webcam`, `upload`, `mock` | `webcam` |
-| `RECOGNITION_MODE` | `mock`, `api`, `local` | `mock` |
-| `DATABASE_MODE` | `sqlite`, `postgresql` | `sqlite` |
-| `SQLITE_PATH` | caminho do arquivo | `data/pratocusto.db` |
-| `DB_AUTO_MIGRATE` | aplica migrações ao iniciar | `true` |
-| `CORS_ORIGINS` | origens separadas por vírgula (sem `*`) | `http://localhost:8000,http://127.0.0.1:8000` |
-| `MAX_UPLOAD_MB` | limite de imagens | `5` |
-| `DEFAULT_PRICE_PER_KG` | preço cobrado por kg (R$) | — (exemplo no `.env.example`) |
-| `SCALE_DEFAULT_TARE_G` | tara padrão (g) | `0` |
-| `SCALE_MIN_WEIGHT_G` | peso líquido mínimo (g) | `10` |
-| `SCALE_STABLE_SAMPLES` / `SCALE_STABLE_TOLERANCE_G` | critério de estabilidade | `3` / `2` |
-| `SCALE_SERIAL_*` | porta, baud, paridade, protocolo etc. | ver [docs/balanca-serial.md](docs/balanca-serial.md) |
-| `CAMERA_DEVICE_INDEX` / `CAMERA_BACKEND` | webcam e backend (`auto`, `dshow`, `msmf`) | `0` / `auto` |
-| `CAMERA_*` | resolução, limiares de qualidade, tempo limite etc. | ver [docs/webcam.md](docs/webcam.md) |
-| `RECOGNITION_MIN_CONFIDENCE` | confiança mínima antes de ir para revisão | `0.70` |
-| `RECOGNITION_MOCK_SCENARIO` | cenário do mock **simulado** | `random` |
-| `RECOGNITION_API_*` | URL, chave e cabeçalho da API externa | ver [docs/reconhecimento.md](docs/reconhecimento.md) |
-| `APP_TIMEZONE` | fuso dos relatórios | `America/Sao_Paulo` |
-| `REVIEW_WEIGHT_TOLERANCE_G` / `_PCT` | tolerância ao corrigir pesos | `5` / `2` |
+| Tema | Variáveis | Documentação |
+|------|-----------|--------------|
+| Balança | `SCALE_*` (porta COM, baud, paridade, protocolo, estabilização, tara) | [balanca-serial.md](docs/balanca-serial.md) |
+| Câmera | `CAMERA_*` | [webcam.md](docs/webcam.md) |
+| Reconhecimento | `RECOGNITION_*` | [reconhecimento.md](docs/reconhecimento.md) |
+| Revisão e relatórios | `APP_TIMEZONE`, `REVIEW_*`, `REPORT_*` | [revisao-e-relatorios.md](docs/revisao-e-relatorios.md) |
+| Segurança | `ALLOWED_HOSTS`, `CORS_ORIGINS`, `API_REQUIRE_KEY`, `AUTH_*`, `MAX_UPLOAD_MB` | [seguranca.md](docs/seguranca.md) |
+| Backup | `BACKUP_KEEP`, `BACKUP_INTERVAL_HOURS` | [backup.md](docs/backup.md) |
+| Banco | `DATABASE_MODE`, `SQLITE_PATH`, `DATABASE_URL`, `POSTGRES_*` | abaixo |
 
 ### PostgreSQL (opção futura)
 
@@ -110,76 +113,81 @@ Todas as configurações vêm de variáveis de ambiente (ou do arquivo `.env`). 
 pip install -r requirements-postgres.txt
 ```
 
-Depois defina `DATABASE_MODE=postgresql` e `DATABASE_URL=postgresql+psycopg://usuario:senha@host:5432/pratocusto`
-(ou os campos `POSTGRES_*`). As regras de negócio não mudam: só a conexão.
+`DATABASE_MODE=postgresql` e `DATABASE_URL=postgresql+psycopg://usuario:senha@host:5432/pratocusto`
+(ou `POSTGRES_*`). As regras de negócio não mudam; as migrações são as mesmas (o SQL para
+PostgreSQL é verificado nos testes, mas o projeto **não foi executado contra um servidor
+PostgreSQL real**).
 
-## Fluxo básico (tudo simulado)
+## Documentação
 
-1. `POST /api/v1/scale/readings` com `{"simulated_weight_g": 650, "tare_g": 150}` → leitura estável.
-2. `POST /api/v1/transactions` com o `id` da leitura e os alimentos com suas proporções
-   (cabeçalho opcional `Idempotency-Key`).
-3. A resposta traz peso líquido, peso de cada alimento, custo alimentar estimado, valor cobrado e
-   margem bruta alimentar estimada.
-
-Com captura e reconhecimento (**simulado** no modo `mock`; não há modelo treinado):
-
-1. `POST /api/v1/camera/captures` (ou `/camera/uploads`) → `image_capture_id`.
-2. `POST /api/v1/recognition/analyze` com `image_capture_id` e `scale_reading_id`.
-3. `POST /api/v1/transactions/from-recognition` com o resultado e a leitura → transação
-   (`pending_review` quando simulada, incerta ou com custo desconhecido).
-
-Detalhes em [docs/reconhecimento.md](docs/reconhecimento.md).
-
-Revisão humana e relatórios:
-
-4. Abra o painel em `/dashboard` (chave de gerente), clique em **Revisar** na fila, corrija
-   alimentos/pesos e confirme; ou use `POST /api/v1/transactions/{id}/review`.
-5. `GET /api/v1/reports/summary` (e `by-day`, `by-food`, `review`, `transactions.csv`).
-
-Detalhes em [docs/revisao-e-relatorios.md](docs/revisao-e-relatorios.md).
-
-Para conectar uma balança real, veja [docs/balanca-serial.md](docs/balanca-serial.md); para a webcam, [docs/webcam.md](docs/webcam.md).
+| Documento | Conteúdo |
+|-----------|----------|
+| [docs/instalacao-windows.md](docs/instalacao-windows.md) | Instalação e operação no Windows |
+| [docs/endpoints.md](docs/endpoints.md) | Todos os endpoints e o nível de acesso de cada um (gerado do código) |
+| [docs/balanca-serial.md](docs/balanca-serial.md) | **Conectar uma balança real depois** |
+| [docs/webcam.md](docs/webcam.md) | Webcam, captura, qualidade de imagem, upload |
+| [docs/reconhecimento.md](docs/reconhecimento.md) | Reconhecimento (mock/API/local) e revisão automática |
+| [docs/revisao-e-relatorios.md](docs/revisao-e-relatorios.md) | Revisão humana, auditoria, relatórios, painel |
+| [docs/seguranca.md](docs/seguranca.md) | Controles, operação em rede, limites |
+| [docs/backup.md](docs/backup.md) | Backup e restauração |
+| [docs/docker.md](docs/docker.md) | Docker e PostgreSQL |
+| [docs/fases/](docs/fases/) | Relatório de cada fase de desenvolvimento |
 
 ## Arquitetura
 
 ```
 app/
   main.py              # fábrica da aplicação FastAPI
-  cli.py               # comandos: migrate, seed, create-operator
-  core/                # config, logging (com mascaramento), security, exceções, middleware
-  api/                 # deps, tratamento de erros, router /api/v1
-    routes/            # health, operators, ingredients, recipes, foods, scale, transactions, camera, recognition, reports, audit
-  models/              # entidades SQLAlchemy
+  cli.py               # migrate, seed, create-operator, rotate-key, backup, restore, docs
+  core/                # config, logging (com máscara), security, middleware (Host/Origin), limitador
+  api/                 # deps (acesso), erros, router /api/v1, inventário de rotas
+    routes/            # health, operators, ingredients, recipes, foods, scale, camera, recognition,
+                       # transactions, reports, audit, admin
+  models/              # entidades SQLAlchemy (Food, Recipe, RecipeIngredient, Ingredient, Transaction,
+                       # TransactionItem, RecognitionResult, ImageCapture, ScaleReading, Operator, AuditLog)
   schemas/             # modelos Pydantic de entrada/saída
-  repositories/        # consultas ao banco (persistência)
+  repositories/        # consultas ao banco
   services/            # regras de negócio
     scale/             # ScaleService: mock, serial, manual + estabilização
-    calculations/      # motor de cálculo (funções puras)
-    camera/            # CameraService (OpenCV), qualidade e armazenamento de imagens
+    camera/            # CameraService (OpenCV), qualidade, armazenamento de imagens
     recognition/       # FoodRecognitionService: mock (simulado), API, local + interpretação
-    reports/           # relatórios gerenciais (Decimal, fuso local, CSV)
-    reviews.py         # revisão humana de transações
-  database/            # conexão, migrações Alembic, seed
-  templates/ static/   # páginas Jinja2
-  utils/
-tests/                 # testes automatizados (sem hardware físico)
-docs/                  # documentação por fase
+    calculations/      # motor de cálculo (funções puras)
+    reports/           # relatórios (Decimal, fuso local, CSV)
+    reviews.py backup.py transactions.py ...
+  database/            # conexão, migrações Alembic (0001-0004), seed idempotente
+  templates/ static/   # painel (Jinja2 + JS sem dependências)
+tests/                 # 407 testes, sem hardware físico
+scripts/ docs/ Dockerfile docker-compose*.yml
 ```
 
 Fluxo de dependência: **rotas → serviços → repositórios → modelos**. Rotas não acessam o banco
 diretamente; serviços não conhecem HTTP; integrações de hardware ficam isoladas em `services/`.
 
-## Testes
+## Testes e qualidade
 
 ```bash
-python -m pytest
+python -m pytest                      # 407 testes, sem balança nem webcam físicas
+pip install -r requirements-dev.txt   # opcional: cobertura
+coverage run --source=app -m pytest && coverage report
 ```
 
-Nenhum teste depende de balança ou webcam físicas.
+Cobrem: peso líquido, distribuição, custo, margem, reconhecimento mock, validação de imagem,
+transações, revisão humana, endpoints, persistência (inclusive entre reinícios), migrações,
+segurança (acesso, Host/Origin, força bruta, XSS), backup/restauração, concorrência e
+empacotamento. O código passa em `ruff` (erros, bugbear, segurança, modernização).
 
-## Banco de dados e migrações
+## Limitações conhecidas
 
-```bash
-python -m app.cli migrate          # aplica migrações
-alembic revision --autogenerate -m "descrição"   # nova migração (desenvolvimento)
-```
+* **Sem reconhecimento real**: só simulado, API externa (contrato próprio, nenhum fornecedor
+  integrado) ou estrutura para modelo local.
+* **Hardware não testado**: webcam física, balança real. A balança serial depende de configurar o
+  protocolo conforme o manual do equipamento (nada foi presumido).
+* **Docker e scripts do Windows não executados** pelos autores (apenas validados estaticamente).
+* **PostgreSQL**: o SQL é gerado e verificado, mas não houve execução contra um servidor real; o
+  backup automático cobre apenas SQLite.
+* **Segurança**: sem login de usuário/senha nem HTTPS embutido (veja
+  [docs/seguranca.md](docs/seguranca.md) antes de expor na rede).
+* O painel não foi testado em celular/tablet.
+* Transações confirmadas não são reabertas (somente canceladas por gerente/admin).
+* Balanças usadas na venda por peso podem estar sujeitas a regras metrológicas (no Brasil, do
+  Inmetro): confirme as exigências do seu equipamento e uso.

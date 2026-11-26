@@ -53,7 +53,8 @@
       if (qs) url += "?" + qs;
     }
     const init = { method: opts.method || "GET", headers };
-    if (opts.body !== undefined) { headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opts.body); }
+    if (opts.form !== undefined) { init.body = opts.form; } // FormData: o navegador define o Content-Type
+    else if (opts.body !== undefined) { headers["Content-Type"] = "application/json"; init.body = JSON.stringify(opts.body); }
     const res = await fetch(url, init);
     if (opts.raw) {
       if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => null));
@@ -62,6 +63,12 @@
     const data = res.status === 204 ? null : await res.json().catch(() => null);
     if (!res.ok) throw new ApiError(res.status, data);
     return data;
+  }
+
+  /* Imagem protegida: <img src> não envia X-API-Key, então busca com fetch e usa uma URL blob:. */
+  async function blobUrl(path) {
+    const res = await api(path, { raw: true });
+    return URL.createObjectURL(await res.blob());
   }
 
   function el(tag, props, children) {
@@ -147,5 +154,13 @@
     start();
   }
 
-  window.PC = { api, ApiError, el, clear, fmt, reasonText, showMessage, requireLogin, STATUS, ACTIONS, REASONS };
+  /* Páginas de apoio (ex.: câmera) só pedem chave quando o servidor exige (API_REQUIRE_KEY=true). */
+  function startPage(minRole, onReady, options) {
+    const needsKey = !(options && options.keyOptional) || document.body.dataset.requireKey === "true";
+    if (needsKey) return requireLogin(minRole, onReady);
+    document.getElementById("content").hidden = false;
+    onReady(null);
+  }
+
+  window.PC = { api, blobUrl, ApiError, el, clear, fmt, reasonText, showMessage, requireLogin, startPage, STATUS, ACTIONS, REASONS };
 })();

@@ -59,3 +59,17 @@ class ServiceUnavailableError(HardwareUnavailableError):
     """Serviço externo/modelo de reconhecimento indisponível (também 503)."""
 
     code = "recognition_unavailable"
+
+
+class TooManyRequestsError(AppError):
+    status_code = 429
+    code = "too_many_attempts"
+
+    def __init__(self, message: str, *, retry_after: int, details=None) -> None:
+        super().__init__(message, details=details)
+        self.retry_after = retry_after
+
+
+class ForbiddenOriginError(AppError):
+    status_code = 403
+    code = "origin_not_allowed"

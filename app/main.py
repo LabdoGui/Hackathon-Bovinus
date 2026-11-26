@@ -19,17 +19,21 @@ from app.api.errors import register_exception_handlers
 from app.api.router import API_PREFIX, api_router
 from app.core.config import Settings, get_settings
 from app.core.logging import setup_logging
-from app.core.middleware import RequestContextMiddleware
+from app.core.middleware import HostOriginGuardMiddleware, RequestContextMiddleware
+from app.core.ratelimit import FailureLimiter
 from app.core.security import API_KEY_HEADER_NAME
 from app.database.connection import Database
 from app.database.migrate import upgrade_to_head
+from app.core.enums import AuditAction
+from app.services.audit import AuditService
+from app.services.backup import BackupScheduler, BackupService
 from app.services.camera import CameraService
 from app.services.recognition import build_recognition_service
 from app.services.scale import ScaleManager
 
 APP_DIR = Path(__file__).resolve().parent
 PAGE_CSP = (
-    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; "
+    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; connect-src 'self'; "
     "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 )
 logger = logging.getLogger("app")
@@ -66,6 +70,7 @@ OPENAPI_TAGS = [
         "description": "Resumo, séries por dia e alimento, estatísticas de revisão e CSV (gerente/admin). "
         "Margem = margem bruta alimentar estimada (não é lucro líquido).",
     },
+    {"name": "Administração", "description": "Backups do banco SQLite (administradores)."},
     {"name": "Auditoria", "description": "Histórico de alterações, correções e falhas de hardware."},
     {"name": "Câmera", "description": "Webcam (OpenCV), pré-visualização, captura, envio manual e qualidade da imagem."},
 ]
@@ -92,9 +97,35 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             settings.camera_mode.value,
             settings.recognition_mode.value,
         )
+        scheduler = None
+        if settings.backup_interval_hours > 0 and database.sqlite_file is not None:
+            service = BackupService(database, settings)
+
+            def scheduled_backup() -> None:
+                info = service.create()
+                with database.session_scope() as session:
+                    AuditService(session).record(
+                        entity_type="backup",
+                        entity_id=info.filename,
+                        action=AuditAction.CREATE,
+                        reason="Backup agendado",
+                        after={"filename": info.filename, "size_bytes": info.size_bytes, "sha256": info.sha256},
+                    )
+
+            scheduler = BackupScheduler(scheduled_backup, settings.backup_interval_hours * 3600)
+            scheduler.start()
+        app.state.backup_scheduler = scheduler
+        if not settings.is_loopback_only and not settings.api_require_key:
+            logger.warning(
+                "HOST=%s expõe a API na rede, mas API_REQUIRE_KEY=false: consultas, câmera e criação de "
+                "transações ficam abertas a qualquer equipamento da rede. Defina API_REQUIRE_KEY=true.",
+                settings.host,
+            )
         try:
             yield
         finally:
+            if scheduler is not None:
+                scheduler.stop()
             app.state.scale.close()
             app.state.camera.close()
             app.state.recognition.close()
@@ -116,6 +147,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Nenhum hardware é aberto aqui: a porta serial só é aberta na primeira leitura.
     app.state.scale = ScaleManager(settings)
     app.state.camera = CameraService(settings)
+    app.state.auth_limiter = FailureLimiter(settings.auth_max_failures, settings.auth_window_s)
     app.state.recognition = build_recognition_service(settings)
 
     app.add_middleware(
@@ -126,6 +158,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["Content-Type", API_KEY_HEADER_NAME, "X-Request-ID", "Idempotency-Key"],
         expose_headers=["X-Request-ID"],
         max_age=600,
+    )
+    app.add_middleware(
+        HostOriginGuardMiddleware, allowed_hosts=settings.allowed_hosts, allowed_origins=settings.cors_origins
     )
     # Folga de 64 KiB para os campos de formulário que acompanham uma imagem.
     app.add_middleware(RequestContextMiddleware, max_body_bytes=settings.max_upload_bytes + 64 * 1024)

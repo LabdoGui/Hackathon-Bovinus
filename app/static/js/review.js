@@ -1,6 +1,7 @@
 (function () {
   "use strict";
-  const { api, el, clear, fmt, reasonText, STATUS, ACTIONS, showMessage } = window.PC;
+  const PC = window.PC;
+  const { api, el, clear, fmt, reasonText, STATUS, ACTIONS, showMessage } = PC;
   const $ = (id) => document.getElementById(id);
   const msg = $("page-msg");
   const txId = new URLSearchParams(location.search).get("id");
@@ -31,7 +32,11 @@
     $("tx-reasons-title").hidden = tx.review_reasons.length === 0;
     const photo = clear($("tx-photo"));
     if (tx.image_capture_id) {
-      photo.appendChild(el("img", { class: "preview", alt: "Foto do prato", src: "/api/v1/camera/captures/" + encodeURIComponent(tx.image_capture_id) + "/image" }));
+      const img = el("img", { class: "preview", alt: "Foto do prato" });
+      photo.appendChild(img);
+      PC.blobUrl("/camera/captures/" + encodeURIComponent(tx.image_capture_id) + "/image")
+        .then((url) => { img.src = url; })
+        .catch(() => { photo.appendChild(el("p", { class: "muted", text: "Não foi possível carregar a foto." })); });
     } else {
       photo.appendChild(el("p", { class: "muted", text: "Sem foto (transação informada manualmente)." }));
     }

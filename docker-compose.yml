@@ -1,0 +1,47 @@
+# PratoCusto AI - execução com Docker
+#
+#   cp .env.example .env        (opcional; ajuste os valores; NUNCA versione o .env)
+#   docker compose up --build
+#   docker compose exec app python -m app.cli create-operator --name Admin --username admin --role admin
+#   docker compose exec app python -m app.cli seed          (dados FICTÍCIOS, opcional)
+#
+# Com PostgreSQL:  docker compose -f docker-compose.yml -f docker-compose.postgres.yml up --build
+#
+# A porta é publicada somente em 127.0.0.1 (o computador local). Para acessar de outros
+# equipamentos da rede, leia docs/seguranca.md antes (ALLOWED_HOSTS, API_REQUIRE_KEY, HTTPS).
+services:
+  app:
+    build: .
+    image: pratocusto-ai:local
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Valores de contêiner (sobrepõem o .env): caminhos e escuta.
+      HOST: 0.0.0.0
+      PORT: "8000"
+      DATA_DIR: /app/data
+      LOG_DIR: /app/logs
+      SQLITE_PATH: /app/data/pratocusto.db
+      # Sem webcam/balança dentro do contêiner por padrão: câmera por upload e balança simulada.
+      CAMERA_MODE: ${CAMERA_MODE:-upload}
+      SCALE_MODE: ${SCALE_MODE:-mock}
+    volumes:
+      - pratocusto-data:/app/data
+      - pratocusto-logs:/app/logs
+    # Linux com webcam/balança USB: descomente e ajuste (e use CAMERA_MODE=webcam / SCALE_MODE=serial,
+    # SCALE_SERIAL_PORT=/dev/ttyUSB0). Não funciona assim no Docker Desktop do Windows.
+    # devices:
+    #   - /dev/video0:/dev/video0
+    #   - /dev/ttyUSB0:/dev/ttyUSB0
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  pratocusto-data:
+  pratocusto-logs:

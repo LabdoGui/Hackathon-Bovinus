@@ -5,7 +5,7 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.core.enums import AuditAction, OperatorRole
-from app.core.exceptions import ConflictError, NotFoundError
+from app.core.exceptions import BusinessRuleError, ConflictError, NotFoundError
 from app.core.security import generate_api_key, hash_api_key
 from app.models import Operator
 from app.repositories.operator import OperatorRepository
@@ -53,6 +53,50 @@ class OperatorService:
             action=AuditAction.CREATE,
             operator_id=created_by.id if created_by else None,
             after=entity_snapshot(operator, exclude=("api_key_hash",)),
+        )
+        self.session.commit()
+        return operator, api_key
+
+    def update(self, operator_id: uuid.UUID, *, changes: dict, changed_by: Operator | None) -> Operator:
+        """Altera nome, perfil ou situação. Nunca deixa o sistema sem administrador ativo."""
+        operator = self.get(operator_id)
+        if "name" in changes and changes["name"] is None or "role" in changes and changes["role"] is None or (
+            "active" in changes and changes["active"] is None
+        ):
+            raise BusinessRuleError("Campos obrigatórios não podem ser nulos.")
+        will_lose_admin = operator.role is OperatorRole.ADMIN and operator.active and (
+            changes.get("role", operator.role) is not OperatorRole.ADMIN or changes.get("active", operator.active) is False
+        )
+        if will_lose_admin and self.repository.count_active_admins(excluding=operator.id) == 0:
+            raise ConflictError(
+                "Não é possível remover o último administrador ativo.", code="last_admin_protected"
+            )
+        before = entity_snapshot(operator, exclude=("api_key_hash",))
+        for key, value in changes.items():
+            setattr(operator, key, value)
+        self.session.flush()
+        self.audit.record(
+            entity_type="operator",
+            entity_id=operator.id,
+            action=AuditAction.UPDATE,
+            operator_id=changed_by.id if changed_by else None,
+            before=before,
+            after=entity_snapshot(operator, exclude=("api_key_hash",)),
+        )
+        self.session.commit()
+        return operator
+
+    def rotate_key(self, operator_id: uuid.UUID, *, changed_by: Operator | None) -> tuple[Operator, str]:
+        """Gera nova chave (a anterior deixa de valer imediatamente). Devolve a chave uma única vez."""
+        operator = self.get(operator_id)
+        api_key = generate_api_key()
+        operator.api_key_hash = hash_api_key(api_key)
+        self.audit.record(
+            entity_type="operator",
+            entity_id=operator.id,
+            action=AuditAction.UPDATE,
+            operator_id=changed_by.id if changed_by else None,
+            reason="Chave de API rotacionada",
         )
         self.session.commit()
         return operator, api_key

@@ -8,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from app.core.exceptions import AppError, AuthenticationError
+from app.core.exceptions import AppError, AuthenticationError, TooManyRequestsError
 from app.core.security import API_KEY_HEADER_NAME
 
 logger = logging.getLogger(__name__)
@@ -38,6 +38,8 @@ def error_response(
 
 async def _app_error(_: Request, exc: AppError) -> JSONResponse:
     headers = {"WWW-Authenticate": API_KEY_HEADER_NAME} if isinstance(exc, AuthenticationError) else None
+    if isinstance(exc, TooManyRequestsError):
+        headers = {"Retry-After": str(exc.retry_after)}
     if exc.status_code >= 500:
         logger.error("%s: %s", exc.code, exc.message)
     return error_response(exc.status_code, exc.code, exc.message, exc.details, headers)

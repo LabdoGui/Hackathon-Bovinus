@@ -25,3 +25,9 @@ class OperatorRead(ORMModel):
 
 class OperatorCreated(OperatorRead):
     api_key: str = Field(description="Exibida somente nesta resposta. Guarde em local seguro.")
+
+
+class OperatorUpdate(BaseModel):
+    name: Name | None = None
+    role: OperatorRole | None = None
+    active: bool | None = None

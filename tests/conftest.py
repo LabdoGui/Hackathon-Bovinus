@@ -29,6 +29,7 @@ def settings(tmp_path) -> Settings:
         camera_mode=CameraMode.MOCK,
         recognition_mode=RecognitionMode.MOCK,
         max_upload_mb=1,
+        allowed_hosts=["testserver", "localhost", "127.0.0.1"],
         scale_sample_interval_ms=0,
         scale_stabilization_timeout_s=2,
         default_price_per_kg=Decimal("59.90"),

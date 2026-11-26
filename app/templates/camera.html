@@ -2,6 +2,8 @@
 {% block title %}Câmera · {{ app_name }}{% endblock %}
 {% block content %}
 <h1>Teste da câmera</h1>
+<div id="auth" class="card" hidden></div>
+<div id="content" hidden>
 <p class="muted">Pré-visualização, captura e envio manual. Página de apoio à instalação; o painel gerencial vem na Fase 5.</p>
 
 <section class="card">
@@ -30,5 +32,6 @@
   <img id="captured" class="preview" alt="">
 </section>
 
+</div>
 {% endblock %}
 {% block scripts %}<script src="{{ url_for('static', path='js/camera.js') }}"></script>{% endblock %}

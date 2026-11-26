@@ -1,54 +1,71 @@
-const api = document.body.dataset.api || "/api/v1";
-const $ = (id) => document.getElementById(id);
+(function () {
+  "use strict";
+  const { api, blobUrl, clear, el, requireLogin, startPage } = window.PC;
+  const $ = (id) => document.getElementById(id);
+  let timer = null;
+  let lastPreview = null;
 
-async function loadStatus() {
-  try {
-    const r = await fetch(`${api}/camera/status`);
-    const s = await r.json();
-    $("status").textContent = `Modo: ${s.mode} · câmera ${s.device_index} · ${s.enabled ? "habilitada" : "desativada (somente envio manual)"}`
-      + (s.last_error ? ` · último erro: ${s.last_error}` : "");
-  } catch (e) {
-    $("status").textContent = "Não foi possível consultar o status.";
+  function setImage(img, url) {
+    if (img.dataset.blob) URL.revokeObjectURL(img.dataset.blob);
+    img.src = url;
+    img.dataset.blob = url;
   }
-}
 
-function showError(body, fallback) {
-  const message = body && body.error ? body.error.message : fallback;
-  $("result").textContent = `Erro: ${message}`;
-  $("warnings").replaceChildren();
-  $("captured").removeAttribute("src");
-}
+  async function loadStatus() {
+    try {
+      const s = await api("/camera/status");
+      $("status").textContent = "Modo: " + s.mode + " · câmera " + s.device_index + " · " +
+        (s.enabled ? "habilitada" : "desativada (somente envio manual)") + (s.last_error ? " · último erro: " + s.last_error : "");
+    } catch (e) {
+      $("status").textContent = "Não foi possível consultar o status: " + e.message;
+    }
+  }
 
-function showCapture(c) {
-  $("result").textContent = `Captura ${c.id} · ${c.source} · ${c.width}x${c.height} · brilho ${c.brightness} · nitidez ${c.sharpness}`;
-  const items = (c.warnings.length ? c.warnings : ["Sem avisos de qualidade."]).map((w) => {
-    const li = document.createElement("li");
-    li.textContent = w;
-    return li;
-  });
-  $("warnings").replaceChildren(...items);
-  $("captured").src = `${c.image_url}?t=${Date.now()}`;
-}
+  function showError(error) {
+    $("result").textContent = "Erro: " + error.message;
+    clear($("warnings"));
+    $("captured").removeAttribute("src");
+  }
 
-$("start").onclick = () => { $("preview").src = `${api}/camera/preview/stream?t=${Date.now()}`; };
-$("stop").onclick = () => { $("preview").removeAttribute("src"); };
+  async function showCapture(c) {
+    $("result").textContent = "Captura " + c.id + " · " + c.source + " · " + c.width + "x" + c.height +
+      " · brilho " + c.brightness + " · nitidez " + c.sharpness;
+    const lines = c.warnings.length ? c.warnings : ["Sem avisos de qualidade."];
+    clear($("warnings")).append(...lines.map((w) => el("li", { text: w })));
+    setImage($("captured"), await blobUrl("/camera/captures/" + encodeURIComponent(c.id) + "/image"));
+  }
 
-$("capture").onclick = async () => {
-  $("result").textContent = "Capturando…";
-  const r = await fetch(`${api}/camera/captures`, { method: "POST" });
-  const body = await r.json().catch(() => null);
-  r.ok ? showCapture(body) : showError(body, `HTTP ${r.status}`);
-  loadStatus();
-};
+  /* Pré-visualização por quadros (funciona com ou sem chave de API; ~4 quadros/s). */
+  async function previewTick() {
+    try {
+      setImage($("preview"), await blobUrl("/camera/preview"));
+    } catch (e) {
+      stopPreview();
+      $("status").textContent = "Pré-visualização interrompida: " + e.message;
+      return;
+    }
+    if (timer !== null) timer = setTimeout(previewTick, 250);
+  }
+  function startPreview() { if (timer === null) { timer = setTimeout(previewTick, 0); } }
+  function stopPreview() { if (timer !== null) { clearTimeout(timer); timer = null; } }
 
-$("upload-form").onsubmit = async (event) => {
-  event.preventDefault();
-  const data = new FormData();
-  data.append("file", $("file").files[0]);
-  $("result").textContent = "Enviando…";
-  const r = await fetch(`${api}/camera/uploads`, { method: "POST", body: data });
-  const body = await r.json().catch(() => null);
-  r.ok ? showCapture(body) : showError(body, `HTTP ${r.status}`);
-};
+  function init() {
+    $("start").onclick = startPreview;
+    $("stop").onclick = stopPreview;
+    $("capture").onclick = async () => {
+      $("result").textContent = "Capturando…";
+      try { await showCapture(await api("/camera/captures", { method: "POST" })); } catch (e) { showError(e); }
+      loadStatus();
+    };
+    $("upload-form").onsubmit = async (event) => {
+      event.preventDefault();
+      const form = new FormData();
+      form.append("file", $("file").files[0]);
+      $("result").textContent = "Enviando…";
+      try { await showCapture(await api("/camera/uploads", { method: "POST", form })); } catch (e) { showError(e); }
+    };
+    loadStatus();
+  }
 
-loadStatus();
+  startPage("operator", init, { keyOptional: true });
+})();
