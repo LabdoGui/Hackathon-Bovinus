@@ -71,7 +71,8 @@ def main() -> int:
     p.add_argument("--area", type=float, default=0.08, help="fração da imagem que precisa mudar p/ ser um prato (0.08)")
     p.add_argument("--estavel", type=float, default=1.5, help="segundos parado antes de fotografar (1.5)")
     p.add_argument("--saida", type=float, default=2.0, help="segundos de bandeja vazia p/ rearmar (2.0)")
-    p.add_argument("--movimento", type=float, default=3.0, help="diferença média entre quadros considerada 'parado' (3.0)")
+    p.add_argument("--movimento", type=float, default=0.03, help="fração da imagem que pode mexer entre quadros e ainda ser 'parado' (0.03)")
+    p.add_argument("--maximo", type=float, default=4.0, help="segundos máx. esperando parar; passou disso tira a foto mesmo assim (4.0)")
     p.add_argument("--debug", action="store_true", help="imprime as métricas a cada quadro")
     a = p.parse_args()
 
@@ -79,7 +80,7 @@ def main() -> int:
     fundo = aprender_fundo(a.api, 8, a.intervalo)
     print("Pronto. Aguardando prato (Ctrl+C para parar).", flush=True)
 
-    estado, desde, anterior = VAZIO, time.monotonic(), None
+    estado, desde, anterior, chegada = VAZIO, time.monotonic(), None, 0.0
     while True:
         t0 = time.monotonic()
         q = buscar_quadro(a.api)
@@ -89,17 +90,18 @@ def main() -> int:
 
         presente_frac = float(np.mean(cv2.absdiff(q, fundo) > a.limiar))
         presente = presente_frac >= a.area
-        movimento = float(np.mean(cv2.absdiff(q, anterior))) if anterior is not None else 99.0
+        movimento = float(np.mean(cv2.absdiff(q, anterior) > 15)) if anterior is not None else 1.0
         parado = movimento <= a.movimento
         anterior = q
         agora = time.monotonic()
 
         if a.debug:
-            print(f"{estado:17} presente={presente_frac:5.1%} movimento={movimento:5.2f}", flush=True)
+            print(f"{estado:17} presente={presente_frac:5.1%} movimento={movimento:5.1%}", flush=True)
 
         if estado == VAZIO:
             if presente:
-                estado, desde = ASSENTANDO, agora
+                estado, desde, chegada = ASSENTANDO, agora, agora
+                print("[ver] algo apareceu, esperando assentar...", flush=True)
             else:  # acompanha deriva lenta de iluminação
                 fundo = cv2.addWeighted(fundo, 0.98, q, 0.02, 0)
         elif estado == ASSENTANDO:
@@ -107,7 +109,7 @@ def main() -> int:
                 estado = VAZIO
             elif not parado:
                 desde = agora  # ainda se mexendo: reinicia a contagem
-            elif agora - desde >= a.estavel:
+            elif agora - desde >= a.estavel or agora - chegada >= a.maximo:
                 captura = tirar_foto(a.api)
                 if captura:
                     print(f"[foto] prato capturado: {captura.get('export_path') or captura.get('id')}", flush=True)
