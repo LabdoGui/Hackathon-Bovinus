@@ -21,6 +21,14 @@ imagem para assistir ou [baixe o MP4](docs/media/pratocusto.mp4) (o vídeo tamb�
 * [Anexo Técnico](docs/media/documentos/Anexo_Tecnico_PratoCusto_AI_Bovinus.pdf) — diagramas, modelo do
   banco de dados, organização do código-fonte e roteiro para avaliação.
 
+### Equipe
+
+| Nome | RA |
+|------|----|
+| Murilo Santos da Silva | 3140698 |
+| Eduarda Rodrigues Mardegan | 3190607 |
+| Guilherme dos Santos Gonçalves | 3111737 |
+
 > ## Leia antes de usar em produção
 >
 > * **Não existe modelo de reconhecimento de alimentos treinado neste projeto.** O modo padrão
