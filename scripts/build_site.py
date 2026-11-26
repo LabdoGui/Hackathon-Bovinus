@@ -48,7 +48,7 @@ from app.main import create_app  # noqa: E402
 from app.models.base import Base  # noqa: E402
 
 REPO_URL = "https://github.com/LabdoGui/Hackathon-Bovinus"
-REPO_BRANCH = "claude/magical-fermat-438tis"
+REPO_BRANCH = "main"
 PAGES = ("index", "balcao", "camera", "dashboard", "review")
 GENERATED = ("index.html", ".nojekyll", "app", "assets")  # o que este script controla dentro de docs/
 DEMO_CSP = (

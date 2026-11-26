@@ -47,7 +47,7 @@ Requisitos: Python 3.12 e Git. Passo a passo completo em
 [docs/instalacao-windows.md](docs/instalacao-windows.md).
 
 ```powershell
-git clone -b claude/magical-fermat-438tis https://github.com/LabdoGui/Hackathon-Bovinus.git
+git clone https://github.com/LabdoGui/Hackathon-Bovinus.git
 cd Hackathon-Bovinus
 .\instalar.bat -Demo
 .venv\Scripts\python.exe -m app.cli create-operator --name "Administrador" --username admin --role admin

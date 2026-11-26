@@ -16,7 +16,7 @@
 ## Instalação rápida (scripts)
 
 ```powershell
-git clone -b claude/magical-fermat-438tis https://github.com/LabdoGui/Hackathon-Bovinus.git
+git clone https://github.com/LabdoGui/Hackathon-Bovinus.git
 cd Hackathon-Bovinus
 .\instalar.bat            # ou:  .\instalar.bat -Demo   (inclui dados FICTÍCIOS de demonstração)
 ```

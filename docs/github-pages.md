@@ -31,11 +31,9 @@ Uma faixa no topo de todas as páginas da demonstração avisa isso ao visitante
 
 1. No GitHub, abra o repositório → **Settings** → **Pages**.
 2. Em **Build and deployment → Source**, escolha **Deploy from a branch**.
-3. Em **Branch**, escolha `claude/magical-fermat-438tis` e a pasta **`/docs`** → **Save**.
+3. Em **Branch**, escolha `main` e a pasta **`/docs`** → **Save**.
 4. Aguarde 1 a 2 minutos (a aba **Actions** mostra o andamento de "pages build and deployment").
 5. Abra **https://labdogui.github.io/Hackathon-Bovinus/**.
-
-Se o código for para a branch `main` no futuro, troque a branch no passo 3.
 
 ## Atualizar o site depois de mudar as páginas
 
