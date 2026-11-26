@@ -9,7 +9,7 @@ Python**, não acessa balança nem banco de dados. Por isso o site tem duas part
 
 | Endereço | Conteúdo |
 |----------|----------|
-| `/` (`docs/index.html`) | Página de apresentação: problema, fluxo, perfis, tecnologia e o vídeo de 2 minutos |
+| `/` (`docs/index.html`) | Página de apresentação: problema, fluxo, perfis, tecnologia e o vídeo de apresentação narrado |
 | `/app/` (`docs/app/`) | **Demonstração**: as mesmas páginas do sistema (Início, Balcão, Câmera, Painel, Revisão) |
 
 Na demonstração, as páginas usam uma **API simulada que roda no navegador** (`site/demo.js`) no
@@ -60,7 +60,7 @@ O script só reescreve o que ele gera (`docs/index.html`, `docs/.nojekyll`, `doc
 | `scripts/build_site.py` | Gera o site: roda o seed num banco temporário, exporta o catálogo e renderiza as páginas |
 | `site/demo.js` | API simulada no navegador (balança, câmera, reconhecimento, transações, revisão, relatórios, CSV) |
 | `site/landing.html`, `site/assets/landing.css` | Página de apresentação |
-| `docs/media/` | Vídeo de apresentação e capa |
+| `docs/media/` | Vídeo de apresentação, capa e documentos em PDF (`docs/media/documentos/`) |
 
 ## Segurança
 

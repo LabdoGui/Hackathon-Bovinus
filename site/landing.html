@@ -7,6 +7,8 @@
   <meta name="description" content="PratoCusto AI: o custo real de cada prato no restaurante por quilo, na hora da pesagem. Balança, câmera, fichas técnicas e margem bruta.">
   <meta name="theme-color" content="#13202F">
   <title>PratoCusto AI — o custo real de cada prato</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='img/icone-32.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='img/icone-180.png') }}">
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='img/icone.svg') }}">
   <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ url_for('static', path='fonts/PlusJakartaSans.woff2') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
@@ -21,6 +23,7 @@
     <nav aria-label="Seções">
       <a href="#como-funciona">Como funciona</a>
       <a href="#tecnologia">Tecnologia</a>
+      <a href="#documentos">Documentos</a>
       <a href="app/index.html">Demonstração</a>
       <a href="{{ repo_url }}">GitHub</a>
     </nav>
@@ -43,7 +46,7 @@
         <video controls preload="none" playsinline{% if has_poster %} poster="media/pratocusto-poster.jpg"{% endif %}>
           <source src="media/pratocusto.mp4" type="video/mp4">
         </video>
-        <figcaption>Apresentação em 2 minutos</figcaption>
+        <figcaption>Apresentação narrada · 4min48s</figcaption>
       </figure>
       {% else %}
       <img class="l-mark" src="{{ url_for('static', path='img/icone.svg') }}" alt="">
@@ -114,6 +117,18 @@
           <li>Backup verificado do SQLite, uploads validados, CORS restrito e proteção contra transações duplicadas.</li>
           <li>Testes automatizados que não dependem de balança nem de webcam física.</li>
         </ul>
+      </div>
+    </section>
+
+    <section class="l-section alt" id="documentos">
+      <div class="l-wrap">
+        <p class="kicker">Documentos</p>
+        <h2>Detalhamento do projeto e anexo técnico.</h2>
+        <div class="tiles l-tiles">
+          <a class="tile" href="media/documentos/Detalhamento_Desenvolvimento_PratoCusto_AI_Bovinus.pdf"><strong>Detalhamento e desenvolvimento</strong><span>Problema, solução, arquitetura, fluxo, cálculo de custos, revisão humana, testes e próximas etapas. PDF, 11 páginas.</span></a>
+          <a class="tile" href="media/documentos/Anexo_Tecnico_PratoCusto_AI_Bovinus.pdf"><strong>Anexo técnico</strong><span>Diagramas, modelo do banco de dados, organização do código-fonte e roteiro para avaliação. PDF, 11 páginas.</span></a>
+          <a class="tile" href="media/pratocusto.mp4"><strong>Vídeo de apresentação</strong><span>A apresentação narrada do sistema, tela por tela. MP4, 4min48s.</span></a>
+        </div>
       </div>
     </section>
 

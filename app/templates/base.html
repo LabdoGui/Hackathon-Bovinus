@@ -7,6 +7,8 @@
   <meta name="description" content="Demonstração do PratoCusto AI: custo real de cada prato no restaurante por quilo.">
   {% endif %}<meta name="theme-color" content="#E8401F">
   <title>{% block title %}{{ app_name }}{% endblock %}</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='img/icone-32.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', path='img/icone-180.png') }}">
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='img/icone.svg') }}">
   <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ url_for('static', path='fonts/PlusJakartaSans.woff2') }}">
   <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}">
