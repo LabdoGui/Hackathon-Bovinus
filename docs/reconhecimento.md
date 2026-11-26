@@ -70,6 +70,28 @@ Segurança e privacidade:
 * Falhas (rede, 401/403, 5xx, resposta inválida) → 503 com mensagem clara, resultado `failed`
   registrado e orientação para o fluxo manual.
 
+### `claude`: visão do Claude (API da Anthropic)
+
+Reconhece o prato de verdade, olhando a foto. Configure no `.env` e reinicie:
+
+```
+RECOGNITION_MODE=claude
+ANTHROPIC_API_KEY=<sua chave, de console.anthropic.com>
+```
+
+Opcionais: `RECOGNITION_CLAUDE_MODEL` (padrão `claude-opus-5-5`; `claude-sonnet-5-5` é mais barato),
+`RECOGNITION_CLAUDE_EFFORT` (`low`, `medium` ou `high`; `low` é mais rápido e barato) e
+`RECOGNITION_CLAUDE_TIMEOUT_S` (padrão 60).
+
+* A foto e a lista de alimentos cadastrados são enviadas à Anthropic; a resposta é JSON validado por
+  esquema (classe, nome, confiança, proporção). Alimento fora da lista vira `alimento_desconhecido`
+  e vai para revisão.
+* **Confiança e proporção são estimativas do modelo, não medidas calibradas.** Por isso o limite
+  `RECOGNITION_MIN_CONFIDENCE` e a revisão humana continuam valendo. Confira os primeiros pratos.
+* Cada análise é uma chamada paga à API (uma imagem por chamada). Falhas (chave inválida, sem
+  internet, limite de uso, recusa do modelo) viram 503 com mensagem clara e o fluxo manual.
+* A chave nunca aparece em logs, erros, status ou respostas.
+
 ### `local`: estrutura preparada
 
 `LocalFoodRecognitionService` define onde um modelo local seria integrado

@@ -11,6 +11,8 @@ pillow==13.0.0
 numpy==2.5.5
 opencv-python-headless==5.1.0.95
 pyserial==3.5
+# Reconhecimento por visão do Claude (RECOGNITION_MODE=claude)
+anthropic==2.14.0
 # Fusos horários no Windows (zoneinfo não tem banco de fusos próprio lá)
 tzdata==2026.6
 
