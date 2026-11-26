@@ -47,5 +47,7 @@ class ImageCaptureRead(BaseModel):
     device_index: int | None
     created_at: datetime
     image_url: str
+    label: str | None = Field(default=None, description='Nome amigável da cópia, ex.: "Prato 0001".')
+    export_path: str | None = Field(default=None, description="Caminho do arquivo copiado para a pasta de pratos.")
     duplicate_of: uuid.UUID | None
     warnings: list[str]

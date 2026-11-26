@@ -28,4 +28,7 @@ class ImageCapture(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     is_dark: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     is_blurry: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     device_index: Mapped[int | None] = mapped_column(Integer)
+    # Cópia amigável feita para o usuário (ex.: "Prato 0001" e o caminho do arquivo); vazia se desligada ou falhou.
+    label: Mapped[str | None] = mapped_column(String(60))
+    export_path: Mapped[str | None] = mapped_column(String(500))
     operator_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("operators.id", ondelete="SET NULL"), index=True)

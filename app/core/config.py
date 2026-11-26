@@ -127,6 +127,11 @@ class Settings(BaseSettings):
     camera_blur_threshold: float = Field(default=100.0, ge=0)
     camera_empty_stddev_threshold: float = Field(default=4.0, ge=0, le=128)
 
+    # Cópia automática de cada captura em "<pasta>/Prato 0001/Prato 0001.jpg", "Prato 0002/..."
+    capture_export_enabled: bool = True
+    capture_export_dir: Path = Path("Pratos")
+    capture_export_prefix: str = Field(default="Prato", min_length=1, max_length=30, pattern=r"^[A-Za-z0-9 _\-]+$")
+
     # Reconhecimento de alimentos
     recognition_min_confidence: Decimal = Field(default=Decimal("0.70"), ge=0, le=1)
     recognition_proportion_tolerance: Decimal = Field(default=Decimal("0.05"), ge=0, le=1)
@@ -278,7 +283,7 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _resolve_paths_and_db(self) -> "Settings":
-        for name in ("data_dir", "log_dir", "sqlite_path"):
+        for name in ("data_dir", "log_dir", "sqlite_path", "capture_export_dir"):
             path: Path = getattr(self, name)
             if not path.is_absolute():
                 setattr(self, name, (BASE_DIR / path).resolve())

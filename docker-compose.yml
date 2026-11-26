@@ -26,6 +26,7 @@ services:
       DATA_DIR: /app/data
       LOG_DIR: /app/logs
       SQLITE_PATH: /app/data/pratocusto.db
+      CAPTURE_EXPORT_DIR: /app/data/pratos
       # Sem webcam/balança dentro do contêiner por padrão: câmera por upload e balança simulada.
       CAMERA_MODE: ${CAMERA_MODE:-upload}
       SCALE_MODE: ${SCALE_MODE:-mock}

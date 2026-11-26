@@ -28,7 +28,8 @@
   }
 
   async function showCapture(c) {
-    $("result").textContent = "Captura " + c.id + " · " + c.source + " · " + c.width + "x" + c.height +
+    const saved = c.label ? "Salvo como \"" + c.label + "\" em " + c.export_path + " — " : "";
+    $("result").textContent = saved + "Captura " + c.id + " · " + c.source + " · " + c.width + "x" + c.height +
       " · brilho " + c.brightness + " · nitidez " + c.sharpness;
     const lines = c.warnings.length ? c.warnings : ["Sem avisos de qualidade."];
     clear($("warnings")).append(...lines.map((w) => el("li", { text: w })));

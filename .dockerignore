@@ -5,6 +5,7 @@
 data/
 logs/
 backups/
+Pratos/
 *.db
 *.db-wal
 *.db-shm

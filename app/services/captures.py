@@ -18,7 +18,7 @@ from app.models import ImageCapture, Operator
 from app.repositories.capture import ImageCaptureRepository
 from app.services.audit import AuditService
 from app.services.camera import CameraService, QualityThresholds, validate_image
-from app.services.camera.images import ALLOWED_CONTENT_TYPES, ImageStore, decode_upload
+from app.services.camera.images import ALLOWED_CONTENT_TYPES, ImageStore, PlateExporter, decode_upload
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,12 @@ class CaptureService:
         self.settings = settings
         self.thresholds = QualityThresholds.from_settings(settings)
         self.store = ImageStore(settings.images_dir)
+        self.exporter = (
+            PlateExporter(settings.capture_export_dir, settings.capture_export_prefix)
+            if settings.capture_export_enabled
+            else None
+        )
+        self.export_error: tuple[uuid.UUID, str] | None = None
         self.repository = ImageCaptureRepository(session)
         self.audit = AuditService(session)
 
@@ -50,6 +56,8 @@ class CaptureService:
 
     def view(self, capture: ImageCapture) -> dict[str, Any]:
         warnings = []
+        if self.export_error and self.export_error[0] == capture.id:
+            warnings.append(self.export_error[1])
         if capture.is_dark:
             warnings.append("Imagem escura: melhore a iluminação.")
         if capture.is_blurry:
@@ -72,6 +80,8 @@ class CaptureService:
             "device_index": capture.device_index,
             "created_at": capture.created_at,
             "image_url": API_IMAGE_URL.format(id=capture.id),
+            "label": capture.label,
+            "export_path": capture.export_path,
             "duplicate_of": duplicate.id if duplicate is not None and duplicate.created_at <= capture.created_at else None,
             "warnings": warnings,
         }
@@ -107,7 +117,19 @@ class CaptureService:
         quality = validate_image(frame, self.thresholds)
         jpeg = self.camera.encode_jpeg(frame)
         relative = self.store.save_jpeg(jpeg)
+        label = exported = export_error = None
+        if self.exporter is not None:
+            try:
+                label, exported = self.exporter.export(jpeg)
+            except OSError as exc:
+                logger.warning("Falha ao copiar a captura para a pasta de pratos: %s", exc)
+                export_error = (
+                    f"A imagem foi registrada, mas NÃO foi copiada para a pasta de pratos "
+                    f"({self.settings.capture_export_dir}): {exc.strerror or 'erro de gravação'}."
+                )
         capture = ImageCapture(
+            label=label,
+            export_path=str(exported) if exported else None,
             source=source,
             file_path=relative,
             sha256=hashlib.sha256(jpeg).hexdigest(),
@@ -128,6 +150,10 @@ class CaptureService:
         except Exception:
             self.session.rollback()
             self.store.delete(relative)
+            if exported is not None and self.exporter is not None:
+                self.exporter.remove(exported)
             raise
+        if export_error:
+            self.export_error = (capture.id, export_error)
         logger.info("Imagem registrada (%s, %sx%s, %s bytes)", source.value, quality.width, quality.height, len(jpeg))
         return capture
