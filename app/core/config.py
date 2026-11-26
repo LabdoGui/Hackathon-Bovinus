@@ -127,7 +127,7 @@ class Settings(BaseSettings):
     camera_blur_threshold: float = Field(default=100.0, ge=0)
     camera_empty_stddev_threshold: float = Field(default=4.0, ge=0, le=128)
 
-    # Cópia automática de cada captura em "<pasta>/Prato 0001/Prato 0001.jpg", "Prato 0002/..."
+    # Cópia automática de cada captura em "<pasta>/AAAA-MM/AAAA-MM-DD/Prato 0001.jpg", "Prato 0002.jpg"...
     capture_export_enabled: bool = True
     capture_export_dir: Path = Path("Pratos")
     capture_export_prefix: str = Field(default="Prato", min_length=1, max_length=30, pattern=r"^[A-Za-z0-9 _\-]+$")
