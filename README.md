@@ -51,8 +51,10 @@ balcão, a revisão humana, o painel gerencial, a tecnologia e os próximos pass
 >   preciso integrar uma API externa (contrato em [docs/reconhecimento.md](docs/reconhecimento.md))
 >   ou um modelo local (apenas a estrutura existe).
 > * Os dados do `seed` são **fictícios** (`is_demo=true`, sufixo "(demo)").
-> * **Webcam física, balança real, Docker e os scripts do Windows não puderam ser testados** no
->   ambiente de desenvolvimento (Linux, sem hardware, sem daemon do Docker). O que foi testado:
+> * **A webcam física foi testada pela equipe**, inclusive com a captura automática do prato
+>   (`auto_capturar.bat` / [scripts/auto_capturar.py](scripts/auto_capturar.py)).
+> * **Balança real, Docker e os scripts de instalação do Windows não puderam ser testados** no
+>   ambiente de desenvolvimento (Linux, sem hardware, sem daemon do Docker). O que foi testado ali:
 >   toda a lógica com equipamentos simulados/falsos, a API, o painel em navegador (Chromium) e os
 >   arquivos de empacotamento de forma estática. Veja [Limitações](#limitações-conhecidas).
 > * "Margem" no sistema é a **margem bruta alimentar estimada** (valor cobrado − custo alimentar
@@ -64,7 +66,7 @@ balcão, a revisão humana, o painel gerencial, a tecnologia e os próximos pass
 |------|--------|--------|
 | 1 | Estrutura, configurações, banco de dados e API básica | ✅ |
 | 2 | Simulador de balança e motor de cálculo | ✅ |
-| 3 | Webcam e captura | ✅ (webcam física não testada) |
+| 3 | Webcam e captura | ✅ (testado com webcam física) |
 | 4 | Reconhecimento mock e interface abstrata de IA | ✅ (sem modelo real) |
 | 5 | Revisão humana, histórico e relatórios | ✅ |
 | 6 | Testes, segurança, documentação e empacotamento | ✅ |
@@ -229,8 +231,9 @@ empacotamento. O código passa em `ruff` (erros, bugbear, segurança, moderniza�
 
 * **Sem reconhecimento real**: só simulado, API externa (contrato próprio, nenhum fornecedor
   integrado) ou estrutura para modelo local.
-* **Hardware não testado**: webcam física, balança real. A balança serial depende de configurar o
-  protocolo conforme o manual do equipamento (nada foi presumido).
+* **Balança real não testada**: a balança serial depende de configurar o protocolo conforme o
+  manual do equipamento (nada foi presumido). A webcam física já foi testada pela equipe; os limites
+  de brilho e nitidez ainda devem ser ajustados à iluminação do balcão do restaurante.
 * **Docker e scripts do Windows não executados** pelos autores (apenas validados estaticamente).
 * **PostgreSQL**: o SQL é gerado e verificado, mas não houve execução contra um servidor real; o
   backup automático cobre apenas SQLite.

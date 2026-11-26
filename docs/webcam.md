@@ -22,9 +22,9 @@ continua funcionando em qualquer modo.
    `CAMERA_BACKEND=dshow` (DirectShow) ou `CAMERA_BACKEND=msmf` (Media Foundation).
 5. Ajuste `CAMERA_WIDTH`/`CAMERA_HEIGHT` se o driver não suportar 1280×720.
 
-> A integração com webcam física **não pôde ser testada neste ambiente** (sem hardware). Foi
-> testada com câmeras simuladas e falsas. Teste a sua webcam seguindo os passos acima e
-> reporte qualquer problema.
+> A webcam física **foi testada pela equipe**, inclusive com a captura automática do prato
+> (`auto_capturar.bat` / `scripts/auto_capturar.py`). Os testes automatizados continuam usando câmeras
+> simuladas e falsas. Ajuste os limites de brilho e nitidez à iluminação real do balcão.
 
 ## Endpoints (`/api/v1/camera`)
 

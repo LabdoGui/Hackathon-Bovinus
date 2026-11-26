@@ -40,7 +40,9 @@ erros de console).
 
 ## Limitação conhecida
 
-A webcam **física** não foi testada (o ambiente de desenvolvimento não tem câmera). O código usa
+Nesta fase a webcam **física** não foi testada (o ambiente de desenvolvimento não tem câmera).
+Depois, a equipe testou o sistema com webcam física, inclusive com a captura automática do prato
+(`scripts/auto_capturar.py`). O código usa
 a API padrão do OpenCV; por isso há `CAMERA_BACKEND` para contornar diferenças de driver no
 Windows. Os limiares de brilho/nitidez são pontos de partida e precisam de ajuste com a
 iluminação real do restaurante.

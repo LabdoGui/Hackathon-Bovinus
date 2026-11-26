@@ -62,7 +62,7 @@ por `blob:`).
 
 ## Não verificado (por limitação do ambiente)
 
-* **Webcam e balança físicas.**
+* **Balança física.** (A webcam física foi testada depois pela equipe.)
 * **Execução do Docker** (sem daemon): `docker compose config` valida a sintaxe, mas a imagem não
   foi construída.
 * **Scripts PowerShell/BAT** (sem PowerShell no ambiente).
