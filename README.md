@@ -14,10 +14,24 @@ balança e reconhecimento simulados e dados fictícios (como ativar: [docs/githu
 O sistema em uso: registro do prato, revisão humana, painel e exportação para planilha, em 2 minutos. Clique na
 imagem para assistir ou [baixe o MP4](docs/media/pratocusto.mp4) (o vídeo também está na página inicial do site).
 
+### Apresentação (5 slides)
+
+[Abrir a apresentação em PDF](docs/media/documentos/Apresentacao_PratoCusto_AI_Bovinus.pdf) — o problema, a solução no
+balcão, a revisão humana, o painel gerencial, a tecnologia e os próximos passos, com as telas do vídeo de demonstração.
+
+<p>
+<a href="docs/media/slides/slide-1.jpg"><img src="docs/media/slides/slide-1.jpg" width="49%" alt="Slide 1: o problema"></a>
+<a href="docs/media/slides/slide-2.jpg"><img src="docs/media/slides/slide-2.jpg" width="49%" alt="Slide 2: a solução no balcão"></a>
+<a href="docs/media/slides/slide-3.jpg"><img src="docs/media/slides/slide-3.jpg" width="49%" alt="Slide 3: revisão humana"></a>
+<a href="docs/media/slides/slide-4.jpg"><img src="docs/media/slides/slide-4.jpg" width="49%" alt="Slide 4: painel gerencial"></a>
+<a href="docs/media/slides/slide-5.jpg"><img src="docs/media/slides/slide-5.jpg" width="49%" alt="Slide 5: tecnologia e próximos passos"></a>
+</p>
+
 **Documentos do projeto:**
 
 * [Detalhamento e Desenvolvimento do Projeto](docs/media/documentos/Detalhamento_Desenvolvimento_PratoCusto_AI_Bovinus.pdf)
   — problema, solução, arquitetura, fluxo, cálculo de custos, revisão humana, testes e próximas etapas.
+* [Apresentação](docs/media/documentos/Apresentacao_PratoCusto_AI_Bovinus.pdf) — 5 slides para a exposição oral.
 * [Anexo Técnico](docs/media/documentos/Anexo_Tecnico_PratoCusto_AI_Bovinus.pdf) — diagramas, modelo do
   banco de dados, organização do código-fonte e roteiro para avaliação.
 
