@@ -7,7 +7,7 @@ self-service. Roda em um notebook ou mini-PC **Windows** (sem Raspberry Pi).
 **Demonstração online:** https://labdogui.github.io/Hackathon-Bovinus/ — roda no navegador, com
 balança e reconhecimento simulados e dados fictícios (como ativar: [docs/github-pages.md](docs/github-pages.md)).
 
-**Vídeo de apresentação:** [docs/media/pratocusto.mp4](docs/media/pratocusto.mp4) — narrado, 4min48s (também
+**Vídeo de apresentação:** [docs/media/pratocusto.mp4](docs/media/pratocusto.mp4) — narrado, 2 minutos (também
 na página inicial do site).
 
 **Documentos do projeto:**
